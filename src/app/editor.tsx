@@ -114,7 +114,7 @@ function Row({
                     `${row.kFormatted} in ${language}`,
                     typeof value === "string" ? value : JSON.stringify(value),
                   );
-                  if (!newValue) return;
+                  if (newValue === null) return;
                   await updateI18nValue(row.k, language, newValue).then(
                     setLocales,
                   );
