@@ -1,41 +1,24 @@
 "use client";
 
 import {
-  i18nGetUsage,
-  i18nOrganize,
-  i18nRemoveKey,
-  i18nRenameKey,
-  i18nUpdateKey,
+  deleteI18nKey,
+  getI18nUsage,
+  organizeLocales,
+  updateI18nKey,
+  updateI18nValue,
 } from "app/actions";
+import { sentenceCase } from "change-case";
+import clsx from "clsx";
 import IconBin from "components/icons/bin";
 import IconPen from "components/icons/pen";
-import LoadingState from "components/loading-state";
+import IconRandom from "components/icons/random";
 import Button from "components/ui/button";
 import CopyButton from "components/ui/copy-button";
-import Input from "components/ui/input";
-import useStore from "hooks/use-store";
-import { Fragment, useDeferredValue, useEffect, useState } from "react";
-import { createStore } from "utils/stores";
-
-const localesStore =
-  createStore(
-    Array<{
-      language: string;
-      data: Record<string, unknown>;
-    }>(),
-  );
-const usageStore = createStore({} as Record<string, number>);
-
-const countLeafs = (obj: Record<string, unknown>): number => {
-  let count = 0;
-
-  for (const key in obj)
-    if (typeof obj[key] === "object" && obj[key] !== null)
-      count += countLeafs(obj[key] as Record<string, unknown>);
-    else count++;
-
-  return count;
-};
+import TableControllerColumnControl from "components/ui/table-controller/column-control";
+import TableControllerRoot from "components/ui/table-controller/root";
+import TableControllerSearchControl from "components/ui/table-controller/search-control";
+import { useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 
 const unformatKey = (key: string | null) => {
   if (!key) return "";
@@ -43,102 +26,103 @@ const unformatKey = (key: string | null) => {
   return key.replace(":", ".");
 };
 
-function Leaf({
-  k,
-  query,
-  value,
-}: {
+type TRow = {
   k: string;
-  query: string;
-  value: unknown;
-}) {
-  const kFormatted = k.replace(".", ":").replace("translation:", "");
-  const usage = useStore(
-    usageStore,
-    (s) => s[kFormatted.replace(/_.*/, "")] ?? 0,
-  );
-  if (
-    query &&
-    !`"${kFormatted}"`.includes(query) &&
-    !`"${value}"`.includes(query)
-  )
-    return null;
-  return (
-    <div className="flex flex-wrap gap-1 rounded-md p-1 even:theme-background">
-      <div className="flex min-w-0 items-start gap-1">
-        <Button
-          className="flex-shrink-0 text-error"
-          iconLeft={<IconBin />}
-          onClick={() => i18nRemoveKey(k).then(localesStore.set)}
-          size="xs"
-          type="button"
-        />
-        <Button
-          className="flex-shrink-0"
-          iconLeft={<IconPen />}
-          onClick={() =>
-            i18nRenameKey(
-              unformatKey(kFormatted),
-              unformatKey(prompt(`Rename ${kFormatted}`, kFormatted)),
-            ).then(localesStore.set)
-          }
-          size="xs"
-          type="button"
-        />
-        <pre className="min-w-0">
-          {kFormatted}
-          <CopyButton size="xs" text={kFormatted} />
-        </pre>
-      </div>
-      <div className="ml-auto flex min-w-0 justify-end gap-1">
-        <p className="min-w-0">
-          {typeof value === "string" ? value : JSON.stringify(value)}
-        </p>
-        {typeof value === "string" && (
-          <Button
-            className="flex-shrink-0"
-            iconLeft={<IconPen />}
-            onClick={async () => {
-              const newValue = prompt(`Value for ${kFormatted}`, value);
-              if (!newValue) return;
-              await i18nUpdateKey(unformatKey(kFormatted), newValue).then(
-                localesStore.set,
-              );
-            }}
-            size="xs"
-            type="button"
-          />
-        )}
-        <p className="px-2">{usage}x</p>
-      </div>
-    </div>
-  );
-}
+  kFormatted: string;
+  usage: number | null;
+  translations: Array<{ language: string; value: unknown }>;
+};
 
-function Tree({
-  data,
-  prefix,
-  query,
+function Row({
+  languages,
+  row,
+  setLocales,
 }: {
-  data: Record<string, unknown>;
-  prefix: string;
-  query: string;
+  languages: Array<string>;
+  row: TRow;
+  setLocales: (
+    locales: Array<{ data: Record<string, unknown>; language: string }>,
+  ) => void;
 }) {
-  return Object.entries(data).map(([key, value]) => {
-    const currentKey = `${prefix}${key}`;
-    return typeof value === "object" && !Array.isArray(value) ? (
-      <Fragment key={key}>
-        <Leaf k={currentKey} query={query} value={undefined} />
-        <Tree
-          data={value as Record<string, unknown>}
-          prefix={`${currentKey}.`}
-          query={query}
-        />
-      </Fragment>
-    ) : (
-      <Leaf key={key} k={currentKey} query={query} value={data[key]} />
-    );
-  });
+  return (
+    <>
+      {row.usage === null ? (
+        <div
+          className="sticky z-20 col-span-full flex ring theme-background"
+          style={{ top: `${row.k.split(".").length * 2}rem` }}
+        >
+          <pre className="sticky left-0 px-2.5 py-1 font-bold">
+            {row.k.split(".").pop()}
+          </pre>
+        </div>
+      ) : (
+        <>
+          <div
+            className="sticky left-0 z-10 flex items-start gap-1 p-1 ring theme-surface"
+            style={{ gridColumnStart: "key" }}
+          >
+            <pre className="flex-grow px-1.5">{row.k.split(".").pop()}</pre>
+            <div
+              className={clsx(
+                "my-1 rounded-lg px-1 text-xs",
+                row.usage === 0 ? "theme-background" : "theme-info-container",
+              )}
+            >
+              {row.usage}x
+            </div>
+            <CopyButton size="xs" text={row.kFormatted} />
+            <Button
+              className="text-error"
+              iconLeft={<IconBin />}
+              onClick={() => deleteI18nKey(row.k).then(setLocales)}
+              size="xs"
+              type="button"
+            />
+            <Button
+              iconLeft={
+                <IconPen className="text-weak group-hover/button:text-text" />
+              }
+              onClick={() =>
+                updateI18nKey(
+                  row.k,
+                  unformatKey(
+                    prompt(`Rename ${row.kFormatted}`, row.kFormatted),
+                  ),
+                ).then(setLocales)
+              }
+              size="xs"
+              type="button"
+            />
+          </div>
+          {row.translations
+            .filter(({ language }) => languages.includes(language))
+            .map(({ language, value }) => (
+              <button
+                key={language}
+                className={clsx(
+                  "max-w-sm px-2.5 py-1 text-left align-top ring hover:bg-divider",
+                  value ? "theme-background" : "theme-error-container",
+                )}
+                onClick={async () => {
+                  const newValue = prompt(
+                    `${row.kFormatted} in ${language}`,
+                    typeof value === "string" ? value : JSON.stringify(value),
+                  );
+                  if (!newValue) return;
+                  await updateI18nValue(row.k, language, newValue).then(
+                    setLocales,
+                  );
+                }}
+                style={{ gridColumnStart: language }}
+                type="button"
+              >
+                {typeof value === "string" ? value : JSON.stringify(value)}
+              </button>
+            ))}
+        </>
+      )}
+    </>
+  );
 }
 
 export default function Editor({
@@ -151,53 +135,158 @@ export default function Editor({
   }>;
   initialUsage: Record<string, number>;
 }) {
-  useEffect(() => {
-    localesStore.set(initialLocales);
-    usageStore.set(initialUsage);
-  }, [initialLocales, initialUsage]);
+  const [usage, setUsage] = useState(initialUsage);
+  const [locales, setLocales] = useState(initialLocales);
 
-  const locales = useStore(localesStore);
-  const defaultLocale = locales.find(({ language }) => language === "en-US");
+  const rows = useMemo(() => {
+    const rows = new Array<TRow>();
 
-  const [query, setQuery] = useState("");
-  const deferredQuery = useDeferredValue(query);
+    const traverseLocales = (
+      slices: Array<{
+        data: Record<string, unknown> | undefined;
+        language: string;
+      }>,
+      prefix: string,
+    ) => {
+      const obj = slices.find(
+        ({ language }) => language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE,
+      )?.data;
+      if (!obj) return;
+
+      for (const key in obj) {
+        const k = `${prefix}${key}`;
+        const kFormatted = k.replace(".", ":").replace("translation:", "");
+
+        if (
+          typeof obj[key] === "object" &&
+          obj[key] !== null &&
+          !Array.isArray(obj[key])
+        ) {
+          rows.push({
+            k,
+            kFormatted,
+            usage: null,
+            translations: slices
+              .map(({ language }) => ({ language, value: null }))
+              .sort((a, b) =>
+                a.language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
+                  ? -1
+                  : b.language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
+                    ? 1
+                    : a.language.localeCompare(b.language),
+              ),
+          });
+          traverseLocales(
+            slices.map(({ data, language }) => ({
+              data: data?.[key] as Record<string, unknown> | undefined,
+              language,
+            })),
+            `${prefix}${key}.`,
+          );
+        } else
+          rows.push({
+            k,
+            kFormatted,
+            usage: usage[kFormatted.replace(/_.*/, "")] ?? 0,
+            translations: slices
+              .map(({ data, language }) => ({
+                language,
+                value: data?.[key] ?? "",
+              }))
+              .sort((a, b) =>
+                a.language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
+                  ? -1
+                  : b.language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
+                    ? 1
+                    : a.language.localeCompare(b.language),
+              ),
+          });
+      }
+    };
+    traverseLocales(locales, "");
+
+    return rows;
+  }, [locales, usage]);
+
+  const languages = initialLocales
+    .map(({ language }) => language)
+    .sort((a, b) =>
+      a === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
+        ? -1
+        : b === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
+          ? 1
+          : a.localeCompare(b),
+    );
+
+  const searchParams = useSearchParams();
+  const columns = searchParams.has("columns")
+    ? searchParams
+        .getAll("columns")
+        .filter((column) => languages.includes(column))
+    : languages;
+
+  const query = searchParams.get("query") ?? "";
+  const visibleRows = rows.filter((row) => row.kFormatted.includes(query));
 
   return (
     <>
-      <div className="flex gap-2 p-2 theme-surface">
-        <Input
-          className="flex-grow"
-          onChange={(event) => {
-            setQuery(event.target.value);
-          }}
-          placeholder="Search"
-          value={query}
-        />
-        <Button
-          className="theme-primary"
-          label="Organize translations"
-          onClick={() => i18nOrganize().then(localesStore.set)}
-          size="sm"
-          type="button"
-        />
-        <Button
-          className="theme-primary"
-          label="Refresh usage"
-          onClick={() => i18nGetUsage().then(usageStore.set)}
-          size="sm"
-          type="button"
+      <TableControllerRoot>
+        <TableControllerSearchControl placeholder="Search keys" />
+        <TableControllerColumnControl
+          defaultColumns={languages}
+          options={languages.map((id) => ({ id, label: sentenceCase(id) }))}
         />
         <p className="px-2.5 py-1">
-          {countLeafs(defaultLocale?.data ?? {})} strings
+          {query ? `${visibleRows.length} / ${rows.length}` : rows.length} keys
         </p>
-      </div>
-      {defaultLocale ? (
-        <div className="min-h-0 min-w-0 flex-grow overflow-auto border-t p-2 theme-surface">
-          <Tree data={defaultLocale.data} prefix="" query={deferredQuery} />
+        <Button
+          label="Organize"
+          onClick={() => organizeLocales().then(setLocales)}
+          outline
+          size="sm"
+          type="button"
+        />
+      </TableControllerRoot>
+      <div
+        className="grid min-h-0 min-w-0 flex-grow gap-px overflow-auto border-t theme-surface"
+        style={{
+          gridTemplateColumns: ["key", ...columns]
+            .map((column) => `[${column}] max-content`)
+            .join(" "),
+        }}
+      >
+        <div
+          className="sticky left-0 top-0 z-20 flex gap-1 bg-surface p-1 text-weak ring"
+          style={{ gridColumnStart: "key" }}
+        >
+          <p className="px-1.5">Key</p>
+          <Button
+            iconLeft={<IconRandom />}
+            layout="icon"
+            onClick={() => getI18nUsage().then(setUsage)}
+            size="xs"
+            title="Refresh"
+            type="button"
+          />
         </div>
-      ) : (
-        <LoadingState />
-      )}
+        {columns.map((language) => (
+          <div
+            key={language}
+            className="sticky top-0 z-10 bg-surface px-2.5 py-1 text-weak ring"
+            style={{ gridColumnStart: language }}
+          >
+            {language}
+          </div>
+        ))}
+        {visibleRows.map((row) => (
+          <Row
+            key={row.k}
+            languages={columns}
+            row={row}
+            setLocales={setLocales}
+          />
+        ))}
+      </div>
     </>
   );
 }

@@ -48,11 +48,13 @@ export const loadLocales = async () => {
   );
 };
 
-export const i18nGetUsage = async () => {
+export const getI18nUsage = async () => {
   headers();
 
   const locales = await loadLocales();
-  const defaultLocale = locales.find(({ language }) => language === "en-US");
+  const defaultLocale = locales.find(
+    ({ language }) => language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE,
+  );
   if (!defaultLocale) return {};
 
   const usage: Record<string, number> = {};
@@ -139,11 +141,13 @@ const findReplace = async (
   }
 };
 
-export const i18nOrganize = async () => {
+export const organizeLocales = async () => {
   headers();
 
   const locales = await loadLocales();
-  const defaultLocale = locales.find(({ language }) => language === "en-US");
+  const defaultLocale = locales.find(
+    ({ language }) => language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE,
+  );
   if (!defaultLocale) return locales;
 
   const definedKeys = new Set<string>();
@@ -181,7 +185,7 @@ export const i18nOrganize = async () => {
   return locales;
 };
 
-export const i18nRemoveKey = async (key: string) => {
+export const deleteI18nKey = async (key: string) => {
   headers();
 
   const locales = await loadLocales();
@@ -208,7 +212,7 @@ export const i18nRemoveKey = async (key: string) => {
   return locales;
 };
 
-export const i18nRenameKey = async (prev: string, next: string) => {
+export const updateI18nKey = async (prev: string, next: string) => {
   headers();
 
   const locales = await loadLocales();
@@ -255,7 +259,11 @@ export const i18nRenameKey = async (prev: string, next: string) => {
   return locales;
 };
 
-export const i18nUpdateKey = async (key: string, value: string) => {
+export const updateI18nValue = async (
+  key: string,
+  language: string,
+  value: string,
+) => {
   headers();
 
   const locales = await loadLocales();
@@ -265,8 +273,9 @@ export const i18nUpdateKey = async (key: string, value: string) => {
 
   if (!lastPrevPart) return locales;
 
-  for (const { data } of locales) {
-    let current: Record<string, unknown> | undefined = data;
+  for (const locale of locales) {
+    if (locale.language !== language) continue;
+    let current: Record<string, unknown> | undefined = locale.data;
     for (const part of prevParts)
       current = current?.[part] as Record<string, unknown> | undefined;
     if (current) current[lastPrevPart] = value;

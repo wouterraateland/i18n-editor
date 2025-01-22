@@ -2,7 +2,7 @@ import { storageAvailable } from "utils/local-storage";
 
 type Subscription<T> = (state: T) => void;
 
-export const createStore = <T>(initialData: T) => {
+const createStore = <T>(initialData: T) => {
   let data = initialData;
   const subscriptions = new Set<Subscription<T>>();
 
@@ -14,9 +14,6 @@ export const createStore = <T>(initialData: T) => {
   return {
     get: () => data,
     set,
-    setSilent(next: T) {
-      data = next;
-    },
     update(updater: (state: T) => T) {
       const next = updater(data);
       if (next !== data) set(next);
