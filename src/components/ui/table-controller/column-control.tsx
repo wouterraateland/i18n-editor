@@ -35,7 +35,7 @@ export default function TableControllerColumnControl({
           iconLeft={
             <IconColumns className="text-weak group-hover/button:text-text" />
           }
-          label="Columns"
+          label="Languages"
           labelClassName="max-md:hidden"
           size="sm"
           type="button"

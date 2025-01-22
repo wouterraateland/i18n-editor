@@ -58,38 +58,44 @@ function Row({
       ) : (
         <>
           <div
-            className="sticky left-0 z-10 flex items-start gap-1 p-1 ring theme-surface"
+            className="group/row sticky left-0 z-10 flex items-start gap-1 p-1 ring theme-surface"
             style={{ gridColumnStart: "key" }}
           >
-            <pre className="flex-grow px-1.5">{row.k.split(".").pop()}</pre>
-            <div
-              className={clsx(
-                "my-1 rounded-lg px-1 text-xs",
-                row.usage === 0 ? "theme-background" : "theme-info-container",
-              )}
-            >
-              {row.usage}x
+            <div className="flex flex-grow items-center gap-1">
+              <pre className="px-1.5">{row.k.split(".").pop()}</pre>
+              <div
+                className={clsx(
+                  "rounded-md px-1 text-xs font-bold",
+                  row.usage === 0 ? "theme-background" : "theme-info-container",
+                )}
+              >
+                {row.usage}x
+              </div>
             </div>
-            <CopyButton size="xs" text={row.kFormatted} />
+            <CopyButton
+              className="opacity-0 group-hover/row:opacity-100"
+              size="xs"
+              text={row.kFormatted}
+            />
             <Button
-              className="text-error"
+              className="text-error opacity-0 group-hover/row:opacity-100"
               iconLeft={<IconBin />}
               onClick={() => deleteI18nKey(row.k).then(setLocales)}
               size="xs"
               type="button"
             />
             <Button
+              className="opacity-0 group-hover/row:opacity-100"
               iconLeft={
                 <IconPen className="text-weak group-hover/button:text-text" />
               }
-              onClick={() =>
-                updateI18nKey(
-                  row.k,
-                  unformatKey(
-                    prompt(`Rename ${row.kFormatted}`, row.kFormatted),
-                  ),
-                ).then(setLocales)
-              }
+              onClick={async () => {
+                const key = unformatKey(
+                  prompt(`Rename ${row.kFormatted}`, row.kFormatted),
+                );
+                if (!key) return;
+                await updateI18nKey(row.k, key).then(setLocales);
+              }}
               size="xs"
               type="button"
             />
