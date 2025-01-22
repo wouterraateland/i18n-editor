@@ -237,7 +237,10 @@ export default function Editor({
           options={languages.map((id) => ({ id, label: sentenceCase(id) }))}
         />
         <p className="px-2.5 py-1">
-          {query ? `${visibleRows.length} / ${rows.length}` : rows.length} keys
+          {visibleRows.length < rows.length
+            ? `${visibleRows.length} / ${rows.length}`
+            : rows.length}{" "}
+          keys
         </p>
         <Button
           label="Organize"
