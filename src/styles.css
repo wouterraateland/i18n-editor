@@ -1,0 +1,213 @@
+@layer base {
+  :root {
+    --color-divider: theme("colors.neutral.200");
+  }
+
+  :root,
+  .light,
+  .dark .inverse {
+    --color-available: theme("colors.green.200");
+    --color-booked: theme("colors.red.200");
+    --color-closed: theme("colors.neutral.100");
+    --color-tentative: theme("colors.amber.200");
+    --color-unavailable: theme("colors.red.200");
+
+    --color-background: theme("colors.neutral.100");
+    --color-on-background: theme("colors.neutral.950");
+    --color-on-background-dimmed: theme("colors.neutral.950" / 75%);
+    --color-on-background-weak: theme("colors.neutral.950" / 57%);
+    --color-background-divider: theme("colors.neutral.200");
+
+    --color-surface: theme("colors.white");
+    --color-on-surface: theme("colors.neutral.950");
+    --color-on-surface-dimmed: theme("colors.neutral.950" / 75%);
+    --color-on-surface-weak: theme("colors.neutral.950" / 50%);
+    --color-surface-divider: theme("colors.neutral.200");
+
+    --color-inverse-surface: theme("colors.neutral.800");
+    --color-on-inverse-surface: theme("colors.neutral.50");
+    --color-on-inverse-surface-dimmed: theme("colors.neutral.50" / 75%);
+    --color-on-inverse-surface-weak: theme("colors.neutral.50" / 50%);
+    --color-inverse-surface-divider: theme("colors.neutral.600");
+
+    --color-primary: #067f54;
+    --color-on-primary: theme("colors.white");
+    --color-on-primary-dimmed: theme("colors.white" / 75%);
+    --color-on-primary-weak: theme("colors.white" / 50%);
+    --color-primary-divider: #08b478;
+
+    --color-error: #d72525;
+    --color-on-error: theme("colors.red.50");
+    --color-on-error-dimmed: theme("colors.red.50" / 75%);
+    --color-on-error-weak: theme("colors.red.50" / 50%);
+    --color-error-divider: theme("colors.red.500");
+
+    --color-warning: #a75c02;
+    --color-on-warning: theme("colors.amber.50");
+    --color-on-warning-dimmed: theme("colors.amber.50" / 75%);
+    --color-on-warning-weak: theme("colors.amber.50" / 50%);
+    --color-warning-divider: #e37e02;
+
+    --color-info: theme("colors.blue.600");
+    --color-on-info: theme("colors.white");
+    --color-on-info-dimmed: theme("colors.white" / 75%);
+    --color-on-info-weak: theme("colors.white" / 50%);
+    --color-info-divider: theme("colors.blue.500");
+
+    --color-primary-container: theme("colors.emerald.200");
+    --color-on-primary-container: theme("colors.emerald.900");
+    --color-on-primary-container-dimmed: theme("colors.emerald.900" / 75%);
+    --color-on-primary-container-weak: theme("colors.emerald.900" / 50%);
+    --color-primary-container-divider: theme("colors.emerald.300");
+
+    --color-error-container: theme("colors.red.200");
+    --color-on-error-container: theme("colors.red.900");
+    --color-on-error-container-dimmed: theme("colors.red.900" / 75%);
+    --color-on-error-container-weak: theme("colors.red.900" / 50%);
+    --color-error-container-divider: theme("colors.red.300");
+
+    --color-warning-container: theme("colors.amber.200");
+    --color-on-warning-container: theme("colors.amber.900");
+    --color-on-warning-container-dimmed: theme("colors.amber.900" / 75%);
+    --color-on-warning-container-weak: theme("colors.amber.900" / 50%);
+    --color-warning-container-divider: theme("colors.amber.300");
+
+    --color-info-container: theme("colors.blue.200");
+    --color-on-info-container: theme("colors.blue.900");
+    --color-on-info-container-dimmed: theme("colors.blue.900" / 75%);
+    --color-on-info-container-weak: theme("colors.blue.900" / 50%);
+    --color-info-container-divider: theme("colors.blue.300");
+  }
+
+  @media screen {
+    .dark,
+    .inverse,
+    .light .inverse {
+      --color-available: theme("colors.green.900");
+      --color-booked: theme("colors.red.900");
+      --color-closed: theme("colors.neutral.950");
+      --color-tentative: theme("colors.yellow.900");
+      --color-unavailable: theme("colors.red.900");
+
+      --color-background: theme("colors.neutral.950");
+      --color-on-background: theme("colors.neutral.100");
+      --color-on-background-dimmed: theme("colors.neutral.100" / 70%);
+      --color-on-background-weak: theme("colors.neutral.100" / 50%);
+      --color-background-divider: theme("colors.neutral.800");
+
+      --color-surface: theme("colors.neutral.900");
+      --color-on-surface: theme("colors.neutral.100");
+      --color-on-surface-dimmed: theme("colors.neutral.100" / 70%);
+      --color-on-surface-weak: theme("colors.neutral.100" / 50%);
+      --color-surface-divider: theme("colors.neutral.800");
+
+      --color-inverse-surface: theme("colors.neutral.100");
+      --color-on-inverse-surface: theme("colors.neutral.800");
+      --color-on-inverse-surface-dimmed: theme("colors.neutral.800" / 75%);
+      --color-on-inverse-surface-weak: theme("colors.neutral.800" / 50%);
+      --color-inverse-surface-divider: theme("colors.neutral.300");
+
+      --color-primary: theme("colors.emerald.400");
+      --color-on-primary: theme("colors.emerald.950");
+      --color-on-primary-dimmed: theme("colors.emerald.950" / 75%);
+      --color-on-primary-weak: theme("colors.emerald.950" / 50%);
+      --color-primary-divider: theme("colors.emerald.500");
+
+      --color-error: theme("colors.red.500");
+      --color-on-error: theme("colors.white");
+      --color-on-error-dimmed: theme("colors.white" / 75%);
+      --color-on-error-weak: theme("colors.white" / 50%);
+      --color-error-divider: theme("colors.red.400");
+
+      --color-warning: theme("colors.amber.500");
+      --color-on-warning: theme("colors.white");
+      --color-on-warning-dimmed: theme("colors.white" / 75%);
+      --color-on-warning-weak: theme("colors.white" / 50%);
+      --color-warning-divider: theme("colors.amber.400");
+
+      --color-info: theme("colors.blue.500");
+      --color-on-info: theme("colors.white");
+      --color-on-info-dimmed: theme("colors.white" / 75%);
+      --color-on-info-weak: theme("colors.white" / 50%);
+      --color-info-divider: theme("colors.blue.400");
+
+      --color-primary-container: theme("colors.emerald.950");
+      --color-on-primary-container: theme("colors.emerald.100");
+      --color-on-primary-container-dimmed: theme("colors.emerald.100" / 75%);
+      --color-on-primary-container-weak: theme("colors.emerald.100" / 50%);
+      --color-primary-container-divider: theme("colors.emerald.900");
+
+      --color-error-container: theme("colors.red.950");
+      --color-on-error-container: theme("colors.red.100");
+      --color-on-error-container-dimmed: theme("colors.red.100" / 75%);
+      --color-on-error-container-weak: theme("colors.red.100" / 50%);
+      --color-error-container-divider: theme("colors.red.900");
+
+      --color-warning-container: theme("colors.amber.950");
+      --color-on-warning-container: theme("colors.amber.100");
+      --color-on-warning-container-dimmed: theme("colors.amber.100" / 75%);
+      --color-on-warning-container-weak: theme("colors.amber.100" / 50%);
+      --color-warning-container-divider: theme("colors.amber.900");
+
+      --color-info-container: theme("colors.blue.950");
+      --color-on-info-container: theme("colors.blue.100");
+      --color-on-info-container-dimmed: theme("colors.blue.100" / 75%);
+      --color-on-info-container-weak: theme("colors.blue.100" / 50%);
+      --color-info-container-divider: theme("colors.blue.900");
+    }
+  }
+
+  * {
+    outline-width: 2px;
+  }
+
+  *:focus-visible {
+    outline-style: solid;
+  }
+
+  hr {
+    border-color: var(--color-divider);
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="date"]::-webkit-inner-spin-button,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-inner-spin-button,
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-decoration,
+  input[type="search"]::-webkit-search-results-button,
+  input[type="search"]::-webkit-search-results-decoration {
+    display: none;
+    -webkit-appearance: none;
+  }
+
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    appearance: textfield;
+  }
+
+  *:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@layer utilities {
+  *,
+  ::before,
+  ::after {
+    --tw-ring-color: var(--color-divider);
+  }
+
+  body[data-resizing="active"] iframe {
+    pointer-events: none;
+  }
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
