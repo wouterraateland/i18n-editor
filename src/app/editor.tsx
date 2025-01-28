@@ -211,6 +211,18 @@ export default function Editor({
     };
     traverseLocales(locales, "");
 
+    for (const key in usage)
+      if (!rows.some((row) => row.kFormatted.replace(/_.*/, "") === key))
+        rows.push({
+          k: key.includes(":") ? key.replace(":", ".") : `translation.${key}`,
+          kFormatted: key,
+          usage: usage[key] ?? 0,
+          translations: locales.map(({ language }) => ({
+            language,
+            value: "",
+          })),
+        });
+
     return rows;
   }, [locales, usage]);
 

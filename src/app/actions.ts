@@ -59,7 +59,7 @@ export const getI18nUsage = async () => {
 
   const usage: Record<string, number> = {};
   const tRegex =
-    /t\("[a-z0-9-_:]+"|tLocalized\("[a-z0-9-_:]+"|i18nKey="[a-z0-9-_:]+"/g;
+    /\Wt\("[a-z0-9-_:.]+"|\WtLocalized\("[a-z0-9-_:.]+"|i18nKey="[a-z0-9-_:.]+"/g;
 
   const traverseFiles = async (folderPath: string) => {
     try {
@@ -73,15 +73,13 @@ export const getI18nUsage = async () => {
         else if (file.endsWith(".ts") || file.endsWith(".tsx")) {
           const content = await readFile(filePath, "utf8");
           const matches =
-            content
-              .match(tRegex)
-              ?.map((match) =>
-                match
-                  .replace('t("', "")
-                  .replace('tLocalized("', "")
-                  .replace('i18nKey="', "")
-                  .replace('"', ""),
-              ) ?? [];
+            content.match(tRegex)?.map((match) =>
+              match
+                .replace(/\Wt\("/, "")
+                .replace(/\WtLocalized\("/, "")
+                .replace('i18nKey="', "")
+                .replace('"', ""),
+            ) ?? [];
           for (const match of matches) usage[match] = (usage[match] ?? 0) + 1;
         }
       }
