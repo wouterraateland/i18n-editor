@@ -231,8 +231,8 @@ export default function Editor({
         .filter((column) => languages.includes(column))
     : languages;
 
-  const query = searchParams.get("query") ?? "";
-  const visibleRows = rows.filter((row) => row.kFormatted.includes(query));
+  const search = searchParams.get("search") ?? "";
+  const visibleRows = rows.filter((row) => row.kFormatted.includes(search));
 
   return (
     <>
@@ -257,7 +257,7 @@ export default function Editor({
         />
       </TableControllerRoot>
       <div
-        className="grid min-h-0 min-w-0 flex-grow gap-px overflow-auto border-t theme-surface"
+        className="grid min-h-0 min-w-0 gap-px overflow-auto border-b"
         style={{
           gridTemplateColumns: ["key", ...columns]
             .map((column) => `[${column}] max-content`)
