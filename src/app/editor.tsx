@@ -5,13 +5,14 @@ import {
   getI18nUsage,
   organizeLocales,
   updateI18nKey,
-  updateI18nValue,
+  updateI18nValues,
 } from "app/actions";
 import { sentenceCase } from "change-case";
 import clsx from "clsx";
 import IconBin from "components/icons/bin";
 import IconPen from "components/icons/pen";
 import IconRandom from "components/icons/random";
+import IconSparkle from "components/icons/sparkle";
 import Button from "components/ui/button";
 import CopyButton from "components/ui/copy-button";
 import TableControllerColumnControl from "components/ui/table-controller/column-control";
@@ -19,6 +20,7 @@ import TableControllerRoot from "components/ui/table-controller/root";
 import TableControllerSearchControl from "components/ui/table-controller/search-control";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { deepLTranslate } from "utils/deepl";
 
 const unformatKey = (key: string | null) => {
   if (!key) return "";
@@ -115,9 +117,9 @@ function Row({
                     typeof value === "string" ? value : JSON.stringify(value),
                   );
                   if (newValue === null) return;
-                  await updateI18nValue(row.k, language, newValue).then(
-                    setLocales,
-                  );
+                  await updateI18nValues([
+                    { key: row.k, language, value: newValue },
+                  ]).then(setLocales);
                 }}
                 style={{ gridColumnStart: language }}
                 type="button"
@@ -280,7 +282,7 @@ export default function Editor({
           className="sticky left-0 top-0 z-20 flex gap-1 bg-surface p-1 text-weak ring"
           style={{ gridColumnStart: "key" }}
         >
-          <p className="px-1.5">Key</p>
+          <p className="pl-1.5">Key</p>
           <Button
             iconLeft={<IconRandom />}
             layout="icon"
@@ -293,10 +295,44 @@ export default function Editor({
         {columns.map((language) => (
           <div
             key={language}
-            className="sticky top-0 z-10 bg-surface px-2.5 py-1 text-weak ring"
+            className="sticky top-0 z-10 flex items-center gap-1 bg-surface p-1 text-weak ring"
             style={{ gridColumnStart: language }}
           >
-            {language}
+            <p className="pl-1.5">{language}</p>
+            <Button
+              iconLeft={<IconSparkle />}
+              onClick={async () => {
+                const rows = visibleRows.filter(
+                  (row) =>
+                    row.usage !== null &&
+                    !row.translations.find((t) => t.language === language)
+                      ?.value,
+                );
+                const translations = await deepLTranslate(
+                  rows
+                    .map(
+                      (row) =>
+                        row.translations.find(
+                          (t) =>
+                            t.language ===
+                            process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE,
+                        )?.value,
+                    )
+                    .map((value) => (typeof value === "string" ? value : "")),
+                  language,
+                );
+                await updateI18nValues(
+                  rows.map((row, i) => ({
+                    key: row.k,
+                    language,
+                    value: translations[i] ?? "",
+                  })),
+                ).then(setLocales);
+              }}
+              size="xs"
+              title="Translate"
+              type="button"
+            />
           </div>
         ))}
         {visibleRows.map((row) => (

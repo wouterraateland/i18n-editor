@@ -257,26 +257,29 @@ export const updateI18nKey = async (prev: string, next: string) => {
   return locales;
 };
 
-export const updateI18nValue = async (
-  key: string,
-  language: string,
-  value: string,
+export const updateI18nValues = async (
+  entries: Array<{
+    key: string;
+    language: string;
+    value: string;
+  }>,
 ) => {
   headers();
 
   const locales = await loadLocales();
 
-  const prevParts = key.split(".");
-  const lastPrevPart = prevParts.pop();
+  for (const { key, language, value } of entries) {
+    const prevParts = key.split(".");
+    const lastPrevPart = prevParts.pop();
+    if (!lastPrevPart) continue;
 
-  if (!lastPrevPart) return locales;
-
-  for (const locale of locales) {
-    if (locale.language !== language) continue;
-    let current: Record<string, unknown> | undefined = locale.data;
-    for (const part of prevParts)
-      current = current?.[part] as Record<string, unknown> | undefined;
-    if (current) current[lastPrevPart] = value;
+    for (const locale of locales) {
+      if (locale.language !== language) continue;
+      let current: Record<string, unknown> | undefined = locale.data;
+      for (const part of prevParts)
+        current = current?.[part] as Record<string, unknown> | undefined;
+      if (current) current[lastPrevPart] = value;
+    }
   }
 
   await saveLocales(locales);
