@@ -22,6 +22,8 @@ import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { deepLTranslate } from "utils/deepl";
 
+const defaultLanguage = process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE!;
+
 const unformatKey = (key: string | null) => {
   if (!key) return "";
   if (!key.includes(":")) return `translation.${key}`;
@@ -157,7 +159,7 @@ export default function Editor({
       prefix: string,
     ) => {
       const obj = slices.find(
-        ({ language }) => language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE,
+        ({ language }) => language === defaultLanguage,
       )?.data;
       if (!obj) return;
 
@@ -177,9 +179,9 @@ export default function Editor({
             translations: slices
               .map(({ language }) => ({ language, value: null }))
               .sort((a, b) =>
-                a.language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
+                a.language === defaultLanguage
                   ? -1
-                  : b.language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
+                  : b.language === defaultLanguage
                     ? 1
                     : a.language.localeCompare(b.language),
               ),
@@ -202,9 +204,9 @@ export default function Editor({
                 value: data?.[key] ?? "",
               }))
               .sort((a, b) =>
-                a.language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
+                a.language === defaultLanguage
                   ? -1
-                  : b.language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
+                  : b.language === defaultLanguage
                     ? 1
                     : a.language.localeCompare(b.language),
               ),
@@ -231,9 +233,9 @@ export default function Editor({
   const languages = initialLocales
     .map(({ language }) => language)
     .sort((a, b) =>
-      a === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
+      a === defaultLanguage
         ? -1
-        : b === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE
+        : b === defaultLanguage
           ? 1
           : a.localeCompare(b),
     );
@@ -243,7 +245,7 @@ export default function Editor({
     ? searchParams
         .getAll("columns")
         .filter((column) => languages.includes(column))
-    : languages;
+    : [defaultLanguage];
 
   const search = searchParams.get("search") ?? "";
   const visibleRows = rows.filter((row) => row.kFormatted.includes(search));
@@ -253,7 +255,7 @@ export default function Editor({
       <TableControllerRoot>
         <TableControllerSearchControl placeholder="Search keys" />
         <TableControllerColumnControl
-          defaultColumns={languages}
+          defaultColumns={[defaultLanguage]}
           options={languages.map((id) => ({ id, label: sentenceCase(id) }))}
         />
         <p className="px-2.5 py-1">
@@ -298,7 +300,7 @@ export default function Editor({
             className="sticky top-0 z-10 flex items-center gap-1 bg-surface p-1 text-weak ring"
             style={{ gridColumnStart: language }}
           >
-            <p className="pl-1.5">{language}</p>
+            <p className="pl-1.5">{sentenceCase(language)}</p>
             <Button
               iconLeft={<IconSparkle />}
               onClick={async () => {
@@ -313,9 +315,7 @@ export default function Editor({
                     .map(
                       (row) =>
                         row.translations.find(
-                          (t) =>
-                            t.language ===
-                            process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE,
+                          (t) => t.language === defaultLanguage,
                         )?.value,
                     )
                     .map((value) => (typeof value === "string" ? value : "")),
