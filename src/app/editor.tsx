@@ -43,7 +43,7 @@ function Row({
     locales: Array<{ data: Record<string, unknown>; language: string }>,
   ) => void;
 }) {
-  if ("translations" in row)
+  if ("value" in row)
     return (
       <>
         <div
@@ -89,9 +89,9 @@ function Row({
             type="button"
           />
         </div>
-        {row.translations
-          .filter(({ language }) => languages.includes(language))
-          .map(({ language, value }) => (
+        {languages.map((language) => {
+          const value = row.value?.[language];
+          return (
             <button
               key={language}
               className={clsx(
@@ -113,7 +113,8 @@ function Row({
             >
               {typeof value === "string" ? value : JSON.stringify(value)}
             </button>
-          ))}
+          );
+        })}
       </>
     );
 
@@ -185,18 +186,13 @@ const traverseLocales = (
         k,
         kFormatted,
         usage: usage[kFormatted.replace(/_.*/, "")] ?? 0,
-        translations: slices
-          .map(({ data, language }) => ({
-            language,
-            value: data?.[key] ?? "",
-          }))
-          .sort((a, b) =>
-            a.language === defaultLanguage
-              ? -1
-              : b.language === defaultLanguage
-                ? 1
-                : a.language.localeCompare(b.language),
-          ),
+        value: slices.reduce<Record<string, unknown>>(
+          (acc, { data, language }) => ({
+            ...acc,
+            [language]: data?.[key] ?? "",
+          }),
+          {},
+        ),
       });
   }
   return forest;
@@ -215,8 +211,30 @@ export default function Editor({
   const [usage, setUsage] = useState(initialUsage);
   const [locales, setLocales] = useState(initialLocales);
 
+  const languages = useMemo(
+    () =>
+      initialLocales
+        .map(({ language }) => language)
+        .sort((a, b) =>
+          a === defaultLanguage
+            ? -1
+            : b === defaultLanguage
+              ? 1
+              : a.localeCompare(b),
+        ),
+    [initialLocales],
+  );
+
   const forest = useMemo(() => {
     const forest = traverseLocales(locales, "", usage);
+
+    const emptyValue = languages.reduce<Record<string, string>>(
+      (acc, language) => ({
+        ...acc,
+        [language]: "",
+      }),
+      {},
+    );
 
     outer: for (const key in usage) {
       const parts = key.split(/\.|:/);
@@ -249,25 +267,12 @@ export default function Editor({
           k: unformatKey(lastPart),
           kFormatted: lastPart,
           usage: usage[lastPart] ?? 0,
-          translations: locales.map(({ language }) => ({
-            language,
-            value: "",
-          })),
+          value: { ...emptyValue },
         });
     }
 
     return forest;
-  }, [locales, usage]);
-
-  const languages = initialLocales
-    .map(({ language }) => language)
-    .sort((a, b) =>
-      a === defaultLanguage
-        ? -1
-        : b === defaultLanguage
-          ? 1
-          : a.localeCompare(b),
-    );
+  }, [languages, locales, usage]);
 
   const searchParams = useSearchParams();
   const columns = searchParams.has("columns")
@@ -341,20 +346,12 @@ export default function Editor({
               onClick={async () => {
                 const nonTranslated = forestFilter(
                   filtered,
-                  (node) =>
-                    !("translations" in node) ||
-                    !node.translations.find((t) => t.language === language)
-                      ?.value,
+                  (node) => !("value" in node) || !node.value[language],
                 );
                 const rows = forestFlatten(nonTranslated);
                 const translations = await deepLTranslate(
                   rows
-                    .map(
-                      (row) =>
-                        row.translations?.find(
-                          (t) => t.language === defaultLanguage,
-                        )?.value,
-                    )
+                    .map((row) => row.value?.[defaultLanguage])
                     .flatMap((value) =>
                       typeof value === "string" ? [value] : [],
                     ),
