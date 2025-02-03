@@ -21,6 +21,8 @@ import TableControllerSearchControl from "components/ui/table-controller/search-
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { deepLTranslate } from "utils/deepl";
+import type { Forest, Tree } from "utils/trees";
+import { forestCount, forestFilter, forestFlatten } from "utils/trees";
 
 const defaultLanguage = process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE!;
 
@@ -30,110 +32,175 @@ const unformatKey = (key: string | null) => {
   return key.replace(":", ".");
 };
 
-type TRow = {
-  k: string;
-  kFormatted: string;
-  usage: number | null;
-  translations: Array<{ language: string; value: unknown }>;
-};
-
 function Row({
   languages,
   row,
   setLocales,
 }: {
   languages: Array<string>;
-  row: TRow;
+  row: Tree;
   setLocales: (
     locales: Array<{ data: Record<string, unknown>; language: string }>,
   ) => void;
 }) {
-  return (
-    <>
-      {row.usage === null ? (
+  if ("translations" in row)
+    return (
+      <>
         <div
-          className="sticky z-20 col-span-full flex ring theme-background"
-          style={{ top: `${row.k.split(".").length * 2}rem` }}
+          className="group/row sticky left-0 z-10 flex items-start gap-1 p-1 ring theme-surface"
+          style={{ gridColumnStart: "key" }}
         >
-          <pre className="sticky left-0 px-2.5 py-1 font-bold">
-            {row.k.split(".").pop()}
-          </pre>
-        </div>
-      ) : (
-        <>
-          <div
-            className="group/row sticky left-0 z-10 flex items-start gap-1 p-1 ring theme-surface"
-            style={{ gridColumnStart: "key" }}
-          >
-            <div className="flex flex-grow items-center gap-1">
-              <pre className="px-1.5">{row.k.split(".").pop()}</pre>
-              <div
-                className={clsx(
-                  "rounded-md px-1 text-xs font-bold",
-                  row.usage === 0 ? "theme-background" : "theme-info-container",
-                )}
-              >
-                {row.usage}x
-              </div>
+          <div className="flex flex-grow items-center gap-1">
+            <pre className="px-1.5">{row.k.split(".").pop()}</pre>
+            <div
+              className={clsx(
+                "rounded-md px-1 text-xs font-bold",
+                row.usage === 0 ? "theme-background" : "theme-info-container",
+              )}
+            >
+              {row.usage}x
             </div>
-            <CopyButton
-              className="opacity-0 group-hover/row:opacity-100"
-              size="xs"
-              text={row.kFormatted}
-            />
-            <Button
-              className="text-error opacity-0 group-hover/row:opacity-100"
-              iconLeft={<IconBin />}
-              onClick={() => deleteI18nKey(row.k).then(setLocales)}
-              size="xs"
-              type="button"
-            />
-            <Button
-              className="opacity-0 group-hover/row:opacity-100"
-              iconLeft={
-                <IconPen className="text-weak group-hover/button:text-text" />
-              }
-              onClick={async () => {
-                const key = unformatKey(
-                  prompt(`Rename ${row.kFormatted}`, row.kFormatted),
-                );
-                if (!key) return;
-                await updateI18nKey(row.k, key).then(setLocales);
-              }}
-              size="xs"
-              type="button"
-            />
           </div>
-          {row.translations
-            .filter(({ language }) => languages.includes(language))
-            .map(({ language, value }) => (
-              <button
-                key={language}
-                className={clsx(
-                  "max-w-sm px-2.5 py-1 text-left align-top ring hover:bg-divider",
-                  value ? "theme-background" : "theme-error-container",
-                )}
-                onClick={async () => {
-                  const newValue = prompt(
-                    `${row.kFormatted} in ${language}`,
-                    typeof value === "string" ? value : JSON.stringify(value),
-                  );
-                  if (newValue === null) return;
-                  await updateI18nValues([
-                    { key: row.k, language, value: newValue },
-                  ]).then(setLocales);
-                }}
-                style={{ gridColumnStart: language }}
-                type="button"
-              >
-                {typeof value === "string" ? value : JSON.stringify(value)}
-              </button>
-            ))}
-        </>
-      )}
-    </>
+          <CopyButton
+            className="opacity-0 group-hover/row:opacity-100"
+            size="xs"
+            text={row.kFormatted}
+          />
+          <Button
+            className="text-error opacity-0 group-hover/row:opacity-100"
+            iconLeft={<IconBin />}
+            onClick={() => deleteI18nKey(row.k).then(setLocales)}
+            size="xs"
+            type="button"
+          />
+          <Button
+            className="opacity-0 group-hover/row:opacity-100"
+            iconLeft={
+              <IconPen className="text-weak group-hover/button:text-text" />
+            }
+            onClick={async () => {
+              const key = unformatKey(
+                prompt(`Rename ${row.kFormatted}`, row.kFormatted),
+              );
+              if (!key) return;
+              await updateI18nKey(row.k, key).then(setLocales);
+            }}
+            size="xs"
+            type="button"
+          />
+        </div>
+        {row.translations
+          .filter(({ language }) => languages.includes(language))
+          .map(({ language, value }) => (
+            <button
+              key={language}
+              className={clsx(
+                "px-2.5 py-1 text-left align-top ring hover:bg-divider",
+                value ? "theme-background" : "theme-error-container",
+              )}
+              onClick={async () => {
+                const newValue = prompt(
+                  `${row.kFormatted} in ${language}`,
+                  typeof value === "string" ? value : JSON.stringify(value),
+                );
+                if (newValue === null) return;
+                await updateI18nValues([
+                  { key: row.k, language, value: newValue },
+                ]).then(setLocales);
+              }}
+              style={{ gridColumnStart: language }}
+              type="button"
+            >
+              {typeof value === "string" ? value : JSON.stringify(value)}
+            </button>
+          ))}
+      </>
+    );
+
+  const parts = row.k.split(".");
+
+  return (
+    <div className="col-span-full grid grid-cols-subgrid gap-px">
+      <div
+        className="sticky col-span-full flex ring theme-background"
+        style={{
+          top: `${parts.length * 2}rem`,
+          paddingLeft: `${Math.max(0, parts.length - 2)}rem`,
+          zIndex: 20 - parts.length,
+        }}
+      >
+        <pre className="sticky left-0 px-2.5 py-1 text-weak">
+          {parts.length > 1 && "└ "}
+          {parts.pop()}
+        </pre>
+      </div>
+      {"children" in row &&
+        row.children.map((child) => (
+          <Row
+            key={child.k}
+            languages={languages}
+            row={child}
+            setLocales={setLocales}
+          />
+        ))}
+    </div>
   );
 }
+
+const traverseLocales = (
+  slices: Array<{
+    data: Record<string, unknown> | undefined;
+    language: string;
+  }>,
+  prefix: string,
+  usage: Record<string, number>,
+): Forest => {
+  const forest = new Array<Tree>();
+  const obj = slices.find(({ language }) => language === defaultLanguage)?.data;
+  if (!obj) return forest;
+
+  for (const key in obj) {
+    const k = `${prefix}${key}`;
+    const kFormatted = k.replace(".", ":").replace("translation:", "");
+
+    if (
+      typeof obj[key] === "object" &&
+      obj[key] !== null &&
+      !Array.isArray(obj[key])
+    )
+      forest.push({
+        k,
+        kFormatted,
+        children: traverseLocales(
+          slices.map(({ data, language }) => ({
+            data: data?.[key] as Record<string, unknown> | undefined,
+            language,
+          })),
+          `${prefix}${key}.`,
+          usage,
+        ),
+      });
+    else
+      forest.push({
+        k,
+        kFormatted,
+        usage: usage[kFormatted.replace(/_.*/, "")] ?? 0,
+        translations: slices
+          .map(({ data, language }) => ({
+            language,
+            value: data?.[key] ?? "",
+          }))
+          .sort((a, b) =>
+            a.language === defaultLanguage
+              ? -1
+              : b.language === defaultLanguage
+                ? 1
+                : a.language.localeCompare(b.language),
+          ),
+      });
+  }
+  return forest;
+};
 
 export default function Editor({
   initialLocales,
@@ -148,86 +215,48 @@ export default function Editor({
   const [usage, setUsage] = useState(initialUsage);
   const [locales, setLocales] = useState(initialLocales);
 
-  const rows = useMemo(() => {
-    const rows = new Array<TRow>();
+  const forest = useMemo(() => {
+    const forest = traverseLocales(locales, "", usage);
 
-    const traverseLocales = (
-      slices: Array<{
-        data: Record<string, unknown> | undefined;
-        language: string;
-      }>,
-      prefix: string,
-    ) => {
-      const obj = slices.find(
-        ({ language }) => language === defaultLanguage,
-      )?.data;
-      if (!obj) return;
-
-      for (const key in obj) {
-        const k = `${prefix}${key}`;
-        const kFormatted = k.replace(".", ":").replace("translation:", "");
-
-        if (
-          typeof obj[key] === "object" &&
-          obj[key] !== null &&
-          !Array.isArray(obj[key])
-        ) {
-          rows.push({
-            k,
-            kFormatted,
-            usage: null,
-            translations: slices
-              .map(({ language }) => ({ language, value: null }))
-              .sort((a, b) =>
-                a.language === defaultLanguage
-                  ? -1
-                  : b.language === defaultLanguage
-                    ? 1
-                    : a.language.localeCompare(b.language),
-              ),
-          });
-          traverseLocales(
-            slices.map(({ data, language }) => ({
-              data: data?.[key] as Record<string, unknown> | undefined,
-              language,
-            })),
-            `${prefix}${key}.`,
-          );
-        } else
-          rows.push({
-            k,
-            kFormatted,
-            usage: usage[kFormatted.replace(/_.*/, "")] ?? 0,
-            translations: slices
-              .map(({ data, language }) => ({
-                language,
-                value: data?.[key] ?? "",
-              }))
-              .sort((a, b) =>
-                a.language === defaultLanguage
-                  ? -1
-                  : b.language === defaultLanguage
-                    ? 1
-                    : a.language.localeCompare(b.language),
-              ),
-          });
+    outer: for (const key in usage) {
+      const parts = key.split(/\.|:/);
+      if (!key.includes(":")) parts.unshift("translation");
+      for (let i = 1; i < parts.length; i++)
+        parts[i] = `${parts[i - 1]}${i === 1 ? ":" : "."}${parts[i]}`.replace(
+          "translation:",
+          "",
+        );
+      const lastPart = parts.pop();
+      if (!lastPart) continue;
+      let current = forest;
+      for (const part of parts) {
+        const node = current.find((node) => node.kFormatted === part);
+        if (!node) {
+          const next = {
+            k: unformatKey(part),
+            kFormatted: part,
+            children: [],
+          };
+          current.push(next);
+          current = next.children;
+        } else if ("children" in node) current = node.children;
+        else continue outer;
       }
-    };
-    traverseLocales(locales, "");
-
-    for (const key in usage)
-      if (!rows.some((row) => row.kFormatted.replace(/_.*/, "") === key))
-        rows.push({
-          k: key.includes(":") ? key.replace(":", ".") : `translation.${key}`,
-          kFormatted: key,
-          usage: usage[key] ?? 0,
+      if (
+        !current.some((tree) => tree.kFormatted.replace(/_.*/, "") === lastPart)
+      )
+        current.push({
+          k: unformatKey(lastPart),
+          kFormatted: lastPart,
+          usage: usage[lastPart] ?? 0,
           translations: locales.map(({ language }) => ({
             language,
             value: "",
           })),
         });
+    }
 
-    return rows;
+    return forest;
   }, [locales, usage]);
 
   const languages = initialLocales
@@ -248,7 +277,11 @@ export default function Editor({
     : [defaultLanguage];
 
   const search = searchParams.get("search") ?? "";
-  const visibleRows = rows.filter((row) => row.kFormatted.includes(search));
+  const filtered = forestFilter(forest, (node) =>
+    node.kFormatted.includes(search),
+  );
+  const totalCount = forestCount(forest);
+  const filteredCount = forestCount(filtered);
 
   return (
     <>
@@ -259,9 +292,9 @@ export default function Editor({
           options={languages.map((id) => ({ id, label: sentenceCase(id) }))}
         />
         <p className="px-2.5 py-1">
-          {visibleRows.length < rows.length
-            ? `${visibleRows.length} / ${rows.length}`
-            : rows.length}{" "}
+          {filteredCount < totalCount
+            ? `${filteredCount} / ${totalCount}`
+            : totalCount}{" "}
           keys
         </p>
         <Button
@@ -276,12 +309,12 @@ export default function Editor({
         className="grid min-h-0 min-w-0 gap-px overflow-auto border-b"
         style={{
           gridTemplateColumns: ["key", ...columns]
-            .map((column) => `[${column}] max-content`)
+            .map((column) => `[${column}] minmax(min-content, 1fr)`)
             .join(" "),
         }}
       >
         <div
-          className="sticky left-0 top-0 z-20 flex gap-1 bg-surface p-1 text-weak ring"
+          className="sticky left-0 top-0 z-40 flex gap-1 bg-surface p-1 ring"
           style={{ gridColumnStart: "key" }}
         >
           <p className="pl-1.5">Key</p>
@@ -297,28 +330,34 @@ export default function Editor({
         {columns.map((language) => (
           <div
             key={language}
-            className="sticky top-0 z-10 flex items-center gap-1 bg-surface p-1 text-weak ring"
+            className="sticky top-0 z-30 flex items-center gap-1 bg-surface p-1 ring"
             style={{ gridColumnStart: language }}
           >
             <p className="pl-1.5">{sentenceCase(language)}</p>
             <Button
-              iconLeft={<IconSparkle />}
+              iconLeft={
+                <IconSparkle className="text-weak group-hover/button:text-text" />
+              }
               onClick={async () => {
-                const rows = visibleRows.filter(
-                  (row) =>
-                    row.usage !== null &&
-                    !row.translations.find((t) => t.language === language)
+                const nonTranslated = forestFilter(
+                  filtered,
+                  (node) =>
+                    !("translations" in node) ||
+                    !node.translations.find((t) => t.language === language)
                       ?.value,
                 );
+                const rows = forestFlatten(nonTranslated);
                 const translations = await deepLTranslate(
                   rows
                     .map(
                       (row) =>
-                        row.translations.find(
+                        row.translations?.find(
                           (t) => t.language === defaultLanguage,
                         )?.value,
                     )
-                    .map((value) => (typeof value === "string" ? value : "")),
+                    .flatMap((value) =>
+                      typeof value === "string" ? [value] : [],
+                    ),
                   language,
                 );
                 await updateI18nValues(
@@ -335,11 +374,11 @@ export default function Editor({
             />
           </div>
         ))}
-        {visibleRows.map((row) => (
+        {filtered.map((tree) => (
           <Row
-            key={row.k}
+            key={tree.k}
             languages={columns}
-            row={row}
+            row={tree}
             setLocales={setLocales}
           />
         ))}
