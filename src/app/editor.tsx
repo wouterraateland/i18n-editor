@@ -20,6 +20,7 @@ import TableControllerRoot from "components/ui/table-controller/root";
 import TableControllerSearchControl from "components/ui/table-controller/search-control";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { chunkBy } from "utils/arrays";
 import { deepLTranslate } from "utils/deepl";
 import type { Forest, Tree } from "utils/trees";
 import { forestCount, forestFilter, forestFlatten } from "utils/trees";
@@ -43,7 +44,14 @@ function Row({
     locales: Array<{ data: Record<string, unknown>; language: string }>,
   ) => void;
 }) {
-  if ("value" in row)
+  if ("value" in row) {
+    const defaultValue = row.value[defaultLanguage];
+    const defaultVariables = new Set(
+      typeof defaultValue === "string"
+        ? (defaultValue.match(/{{[^}]+}}/g)?.slice() ?? [])
+        : [],
+    );
+
     return (
       <>
         <div
@@ -91,12 +99,24 @@ function Row({
         </div>
         {languages.map((language) => {
           const value = row.value?.[language];
+          const variables = new Set(
+            typeof value === "string"
+              ? (value.match(/{{[^}]+}}/g)?.slice() ?? [])
+              : [],
+          );
+
           return (
             <button
               key={language}
               className={clsx(
                 "px-2.5 py-1 text-left align-top ring hover:bg-divider",
-                value ? "theme-background" : "theme-error-container",
+                value
+                  ? // @ts-expect-error Symmetric difference is not defined
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+                    variables.symmetricDifference(defaultVariables).size > 0
+                    ? "theme-warning-container"
+                    : "theme-background"
+                  : "theme-error-container",
               )}
               onClick={async () => {
                 const newValue = prompt(
@@ -117,6 +137,7 @@ function Row({
         })}
       </>
     );
+  }
 
   const parts = row.k.split(".");
 
@@ -282,8 +303,13 @@ export default function Editor({
     : [defaultLanguage];
 
   const search = searchParams.get("search") ?? "";
-  const filtered = forestFilter(forest, (node) =>
-    node.kFormatted.includes(search),
+  const filtered = forestFilter(
+    forest,
+    (node) =>
+      node.kFormatted.includes(search) &&
+      (!("value" in node) ||
+        (typeof node.value["en-US"] === "string" &&
+          node.value["en-US"].includes("{{"))),
   );
   const totalCount = forestCount(forest);
   const filteredCount = forestCount(filtered);
@@ -348,22 +374,24 @@ export default function Editor({
                   filtered,
                   (node) => !("value" in node) || !node.value[language],
                 );
-                const rows = forestFlatten(nonTranslated);
-                const translations = await deepLTranslate(
-                  rows
-                    .map((row) => row.value?.[defaultLanguage])
-                    .flatMap((value) =>
-                      typeof value === "string" ? [value] : [],
-                    ),
-                  language,
+                const rows = forestFlatten(nonTranslated).filter(
+                  (row) =>
+                    "value" in row &&
+                    typeof row.value[defaultLanguage] === "string",
                 );
-                await updateI18nValues(
-                  rows.map((row, i) => ({
-                    key: row.k,
+                for (const chunk of chunkBy(rows, 100)) {
+                  const translations = await deepLTranslate(
+                    chunk.map((row) => row.value?.[defaultLanguage] as string),
                     language,
-                    value: translations[i] ?? "",
-                  })),
-                ).then(setLocales);
+                  );
+                  await updateI18nValues(
+                    chunk.map((row, i) => ({
+                      key: row.k,
+                      language,
+                      value: translations[i] ?? "",
+                    })),
+                  ).then(setLocales);
+                }
               }}
               size="xs"
               title="Translate"
