@@ -307,9 +307,7 @@ export default function Editor({
     forest,
     (node) =>
       node.kFormatted.includes(search) &&
-      (!("value" in node) ||
-        (typeof node.value["en-US"] === "string" &&
-          node.value["en-US"].includes("{{"))),
+      (!("value" in node) || !node.value["it-IT"]),
   );
   const totalCount = forestCount(forest);
   const filteredCount = forestCount(filtered);

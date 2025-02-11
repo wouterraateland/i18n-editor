@@ -275,10 +275,12 @@ export const updateI18nValues = async (
 
     for (const locale of locales) {
       if (locale.language !== language) continue;
-      let current: Record<string, unknown> | undefined = locale.data;
-      for (const part of prevParts)
-        current = current?.[part] as Record<string, unknown> | undefined;
-      if (current) current[lastPrevPart] = value;
+      let current: Record<string, unknown> = locale.data;
+      for (const part of prevParts) {
+        if (!current[part]) current[part] = {};
+        current = current[part] as Record<string, unknown>;
+      }
+      current[lastPrevPart] = value;
     }
   }
 
