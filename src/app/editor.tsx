@@ -15,7 +15,8 @@ import IconRandom from "components/icons/random";
 import IconSparkle from "components/icons/sparkle";
 import Button from "components/ui/button";
 import CopyButton from "components/ui/copy-button";
-import TableControllerColumnControl from "components/ui/table-controller/column-control";
+import Select from "components/ui/select";
+import TableControllerLanguageControl from "components/ui/table-controller/language-control";
 import TableControllerRoot from "components/ui/table-controller/root";
 import TableControllerSearchControl from "components/ui/table-controller/search-control";
 import { useSearchParams } from "next/navigation";
@@ -24,6 +25,7 @@ import { chunkBy } from "utils/arrays";
 import { deepLTranslate } from "utils/deepl";
 import type { Forest, Tree } from "utils/trees";
 import { forestCount, forestFilter, forestFlatten } from "utils/trees";
+import { applySearchParams } from "utils/urls";
 
 const defaultLanguage = process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE!;
 
@@ -44,14 +46,7 @@ function Row({
     locales: Array<{ data: Record<string, unknown>; language: string }>,
   ) => void;
 }) {
-  if ("value" in row) {
-    const defaultValue = row.value[defaultLanguage];
-    const defaultVariables = new Set(
-      typeof defaultValue === "string"
-        ? (defaultValue.match(/{{[^}]+}}/g)?.slice() ?? [])
-        : [],
-    );
-
+  if ("translations" in row)
     return (
       <>
         <div
@@ -98,30 +93,25 @@ function Row({
           />
         </div>
         {languages.map((language) => {
-          const value = row.value?.[language];
-          const variables = new Set(
-            typeof value === "string"
-              ? (value.match(/{{[^}]+}}/g)?.slice() ?? [])
-              : [],
-          );
+          const translation = row.translations?.[language];
 
           return (
             <button
               key={language}
               className={clsx(
                 "px-2.5 py-1 text-left align-top ring hover:bg-divider",
-                value
-                  ? // @ts-expect-error Symmetric difference is not defined
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-                    variables.symmetricDifference(defaultVariables).size > 0
+                !translation?.value
+                  ? "theme-error-container"
+                  : translation.warning
                     ? "theme-warning-container"
-                    : "theme-background"
-                  : "theme-error-container",
+                    : "theme-background",
               )}
               onClick={async () => {
                 const newValue = prompt(
                   `${row.kFormatted} in ${language}`,
-                  typeof value === "string" ? value : JSON.stringify(value),
+                  typeof translation?.value === "string"
+                    ? translation.value
+                    : JSON.stringify(translation?.value),
                 );
                 if (newValue === null) return;
                 await updateI18nValues([
@@ -131,13 +121,14 @@ function Row({
               style={{ gridColumnStart: language }}
               type="button"
             >
-              {typeof value === "string" ? value : JSON.stringify(value)}
+              {typeof translation?.value === "string"
+                ? translation.value
+                : JSON.stringify(translation?.value)}
             </button>
           );
         })}
       </>
     );
-  }
 
   const parts = row.k.split(".");
 
@@ -202,19 +193,57 @@ const traverseLocales = (
           usage,
         ),
       });
-    else
+    else {
+      const translations = slices.reduce<
+        Record<string, { value: unknown; warning: string | null }>
+      >(
+        (acc, { data, language }) => ({
+          ...acc,
+          [language]: { value: data?.[key] ?? "", warning: null },
+        }),
+        {},
+      );
+      const defaultTranslation = translations[defaultLanguage];
+      const defaultVariables = new Set(
+        typeof defaultTranslation?.value === "string"
+          ? (defaultTranslation.value.match(/{{[^}]+}}/g)?.slice() ?? [])
+          : [],
+      );
+      const defaultComponents = new Set(
+        typeof defaultTranslation?.value === "string"
+          ? (defaultTranslation.value.match(/<[^>]+>/g)?.slice() ?? [])
+          : [],
+      );
+      for (const translation of Object.values(translations))
+        if (!translation.value) continue;
+        else {
+          const variables = new Set(
+            typeof translation.value === "string"
+              ? (translation.value.match(/{{[^}]+}}/g)?.slice() ?? [])
+              : [],
+          );
+          const components = new Set(
+            typeof translation.value === "string"
+              ? (translation.value.match(/<[^>]+>/g)?.slice() ?? [])
+              : [],
+          );
+          // @ts-expect-error Symmetric difference is not defined
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+          if (variables.symmetricDifference(defaultVariables).size > 0)
+            translation.warning = "Variable mismatch";
+          // @ts-expect-error Symmetric difference is not defined
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+          if (components.symmetricDifference(defaultComponents).size > 0)
+            translation.warning = "Component mismatch";
+        }
+
       forest.push({
         k,
         kFormatted,
         usage: usage[kFormatted.replace(/_.*/, "")] ?? 0,
-        value: slices.reduce<Record<string, unknown>>(
-          (acc, { data, language }) => ({
-            ...acc,
-            [language]: data?.[key] ?? "",
-          }),
-          {},
-        ),
+        translations,
       });
+    }
   }
   return forest;
 };
@@ -249,10 +278,12 @@ export default function Editor({
   const forest = useMemo(() => {
     const forest = traverseLocales(locales, "", usage);
 
-    const emptyValue = languages.reduce<Record<string, string>>(
+    const emptyValue = languages.reduce<
+      Record<string, { value: string; warning: null }>
+    >(
       (acc, language) => ({
         ...acc,
-        [language]: "",
+        [language]: { value: "", warning: null },
       }),
       {},
     );
@@ -288,7 +319,7 @@ export default function Editor({
           k: unformatKey(lastPart),
           kFormatted: lastPart,
           usage: usage[lastPart] ?? 0,
-          value: { ...emptyValue },
+          translations: { ...emptyValue },
         });
     }
 
@@ -296,18 +327,32 @@ export default function Editor({
   }, [languages, locales, usage]);
 
   const searchParams = useSearchParams();
-  const columns = searchParams.has("columns")
+  const visibleLanguages = searchParams.has("languages")
     ? searchParams
-        .getAll("columns")
-        .filter((column) => languages.includes(column))
+        .getAll("languages")
+        .filter((language) => languages.includes(language))
     : [defaultLanguage];
 
   const search = searchParams.get("search") ?? "";
+  const status = searchParams.get("status") || "all";
   const filtered = forestFilter(
     forest,
     (node) =>
       node.kFormatted.includes(search) &&
-      (!("value" in node) || !node.value["it-IT"]),
+      (!("translations" in node) ||
+        (status === "translated"
+          ? visibleLanguages.every(
+              (language) => node.translations?.[language]?.value,
+            )
+          : status === "untranslated"
+            ? visibleLanguages.some(
+                (language) => !node.translations?.[language]?.value,
+              )
+            : status === "mismatch"
+              ? visibleLanguages.some(
+                  (language) => node.translations?.[language]?.warning,
+                )
+              : true)),
   );
   const totalCount = forestCount(forest);
   const filteredCount = forestCount(filtered);
@@ -316,8 +361,22 @@ export default function Editor({
     <>
       <TableControllerRoot>
         <TableControllerSearchControl placeholder="Search keys" />
-        <TableControllerColumnControl
-          defaultColumns={[defaultLanguage]}
+        <Select
+          className="bg-background"
+          onChange={(status) => {
+            applySearchParams({ status }, window.location.search);
+          }}
+          options={[
+            { label: "All", value: "all" },
+            { label: "Translated", value: "translated" },
+            { label: "Untranslated", value: "untranslated" },
+            { label: "Mismatch", value: "mismatch" },
+          ]}
+          size="sm"
+          value={status}
+        />
+        <TableControllerLanguageControl
+          defaultLanguages={[defaultLanguage]}
           options={languages.map((id) => ({ id, label: sentenceCase(id) }))}
         />
         <p className="px-2.5 py-1">
@@ -337,7 +396,7 @@ export default function Editor({
       <div
         className="grid min-h-0 min-w-0 gap-px overflow-auto border-b"
         style={{
-          gridTemplateColumns: ["key", ...columns]
+          gridTemplateColumns: ["key", ...visibleLanguages]
             .map((column) => `[${column}] minmax(min-content, 1fr)`)
             .join(" "),
         }}
@@ -356,7 +415,7 @@ export default function Editor({
             type="button"
           />
         </div>
-        {columns.map((language) => (
+        {visibleLanguages.map((language) => (
           <div
             key={language}
             className="sticky top-0 z-30 flex items-center gap-1 bg-surface p-1 ring"
@@ -370,16 +429,22 @@ export default function Editor({
               onClick={async () => {
                 const nonTranslated = forestFilter(
                   filtered,
-                  (node) => !("value" in node) || !node.value[language],
+                  (node) =>
+                    !("translations" in node) ||
+                    !node.translations[language]?.value,
                 );
                 const rows = forestFlatten(nonTranslated).filter(
                   (row) =>
-                    "value" in row &&
-                    typeof row.value[defaultLanguage] === "string",
+                    "translations" in row &&
+                    typeof row.translations[defaultLanguage]?.value ===
+                      "string",
                 );
                 for (const chunk of chunkBy(rows, 100)) {
                   const translations = await deepLTranslate(
-                    chunk.map((row) => row.value?.[defaultLanguage] as string),
+                    chunk.map(
+                      (row) =>
+                        row.translations?.[defaultLanguage]?.value as string,
+                    ),
                     language,
                   );
                   await updateI18nValues(
@@ -400,7 +465,7 @@ export default function Editor({
         {filtered.map((tree) => (
           <Row
             key={tree.k}
-            languages={columns}
+            languages={visibleLanguages}
             row={tree}
             setLocales={setLocales}
           />

@@ -15,18 +15,18 @@ import { useSearchParams } from "next/navigation";
 import { firstBy } from "thenby";
 import { applySearchParams } from "utils/urls";
 
-export default function TableControllerColumnControl({
-  defaultColumns,
+export default function TableControllerLanguageControl({
+  defaultLanguages,
   options,
 }: {
-  defaultColumns: Array<string>;
+  defaultLanguages: Array<string>;
   options: Array<{ id: string; label: string }> | Array<string>;
 }) {
   const searchParams = useSearchParams();
 
-  const columns = searchParams.has("columns")
-    ? searchParams.getAll("columns")
-    : defaultColumns;
+  const languages = searchParams.has("languages")
+    ? searchParams.getAll("languages")
+    : defaultLanguages;
 
   return (
     <PopoverRoot modal>
@@ -52,18 +52,18 @@ export default function TableControllerColumnControl({
             )
             .sort(
               firstBy((o) =>
-                !columns.includes(o.id)
-                  ? columns.length
-                  : columns.indexOf(o.id),
+                !languages.includes(o.id)
+                  ? languages.length
+                  : languages.indexOf(o.id),
               ),
             )}
           onMove={(active_id, over_id) => {
             applySearchParams(
               {
-                columns: arrayMove(
-                  columns,
-                  columns.findIndex((row) => row === active_id),
-                  columns.findIndex((row) => row === over_id),
+                languages: arrayMove(
+                  languages,
+                  languages.findIndex((row) => row === active_id),
+                  languages.findIndex((row) => row === over_id),
                 ),
               },
               window.location.search,
@@ -73,12 +73,12 @@ export default function TableControllerColumnControl({
             <Button
               key={item.id}
               className="w-full"
-              disabled={columns.length === 1 && columns.includes(item.id)}
+              disabled={languages.length === 1 && languages.includes(item.id)}
               iconLeft={
                 <div
                   className="group flex size-4 flex-shrink-0 items-center justify-center rounded-md bg-background text-xs text-weak outline-offset-2 ring-1 ring-inset ring-current transition-all hover:bg-divider hover:text-text focus:outline data-[state=checked]:text-surface data-[state=checked]:ring-8 data-[state=checked]:ring-primary"
                   data-state={
-                    columns.includes(item.id) ? "checked" : "unchecked"
+                    languages.includes(item.id) ? "checked" : "unchecked"
                   }
                 >
                   <IconCheck className="stroke-[5px] group-data-[state=unchecked]:hidden" />
@@ -89,9 +89,9 @@ export default function TableControllerColumnControl({
               onClick={() => {
                 applySearchParams(
                   {
-                    columns: columns.includes(item.id)
-                      ? columns.filter((c) => c !== item.id)
-                      : [...columns, item.id],
+                    languages: languages.includes(item.id)
+                      ? languages.filter((c) => c !== item.id)
+                      : [...languages, item.id],
                   },
                   window.location.search,
                 );

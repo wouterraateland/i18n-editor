@@ -2,7 +2,7 @@ export type Tree = {
   children?: Array<Tree>;
   k: string;
   kFormatted: string;
-  value?: Record<string, unknown>;
+  translations?: Record<string, { value: unknown; warning: string | null }>;
   usage?: number;
 };
 
