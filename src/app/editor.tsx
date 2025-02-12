@@ -352,7 +352,9 @@ export default function Editor({
               ? visibleLanguages.some(
                   (language) => node.translations?.[language]?.warning,
                 )
-              : true)),
+              : status === "unused"
+                ? !node.usage
+                : true)),
   );
   const totalCount = forestCount(forest);
   const filteredCount = forestCount(filtered);
@@ -371,6 +373,7 @@ export default function Editor({
             { label: "Translated", value: "translated" },
             { label: "Untranslated", value: "untranslated" },
             { label: "Mismatch", value: "mismatch" },
+            { label: "Unused", value: "unused" },
           ]}
           size="sm"
           value={status}
