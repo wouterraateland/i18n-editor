@@ -23,6 +23,7 @@ import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { chunkBy } from "utils/arrays";
 import { deepLTranslate } from "utils/deepl";
+import { deepLLanguages } from "utils/deepl-languages";
 import type { Forest, Tree } from "utils/trees";
 import { forestCount, forestFilter, forestFlatten } from "utils/trees";
 import { applySearchParams } from "utils/urls";
@@ -94,37 +95,31 @@ function Row({
         </div>
         {languages.map((language) => {
           const translation = row.translations?.[language];
+          const value =
+            typeof translation?.value === "string"
+              ? translation.value
+              : JSON.stringify(translation?.value);
 
           return (
-            <button
+            <textarea
               key={language}
               className={clsx(
-                "px-2.5 py-1 text-left align-top ring hover:bg-divider",
+                "min-w-64 resize-none px-2.5 py-1 ring [field-sizing:content] hover:bg-divider",
                 !translation?.value
                   ? "theme-error-container"
                   : translation.warning
                     ? "theme-warning-container"
                     : "theme-background",
               )}
-              onClick={async () => {
-                const newValue = prompt(
-                  `${row.kFormatted} in ${language}`,
-                  typeof translation?.value === "string"
-                    ? translation.value
-                    : JSON.stringify(translation?.value),
-                );
-                if (newValue === null) return;
+              defaultValue={value}
+              onBlur={async (event) => {
+                if (event.target.value === translation?.value) return;
                 await updateI18nValues([
-                  { key: row.k, language, value: newValue },
+                  { key: row.k, language, value: event.target.value },
                 ]).then(setLocales);
               }}
               style={{ gridColumnStart: language }}
-              type="button"
-            >
-              {typeof translation?.value === "string"
-                ? translation.value
-                : JSON.stringify(translation?.value)}
-            </button>
+            />
           );
         })}
       </>
@@ -425,44 +420,46 @@ export default function Editor({
             style={{ gridColumnStart: language }}
           >
             <p className="pl-1.5">{sentenceCase(language)}</p>
-            <Button
-              iconLeft={
-                <IconSparkle className="text-weak group-hover/button:text-text" />
-              }
-              onClick={async () => {
-                const nonTranslated = forestFilter(
-                  filtered,
-                  (node) =>
-                    !("translations" in node) ||
-                    !node.translations[language]?.value,
-                );
-                const rows = forestFlatten(nonTranslated).filter(
-                  (row) =>
-                    "translations" in row &&
-                    typeof row.translations[defaultLanguage]?.value ===
-                      "string",
-                );
-                for (const chunk of chunkBy(rows, 100)) {
-                  const translations = await deepLTranslate(
-                    chunk.map(
-                      (row) =>
-                        row.translations?.[defaultLanguage]?.value as string,
-                    ),
-                    language,
-                  );
-                  await updateI18nValues(
-                    chunk.map((row, i) => ({
-                      key: row.k,
-                      language,
-                      value: translations[i] ?? "",
-                    })),
-                  ).then(setLocales);
+            {language !== defaultLanguage && deepLLanguages[language] && (
+              <Button
+                iconLeft={
+                  <IconSparkle className="text-weak group-hover/button:text-text" />
                 }
-              }}
-              size="xs"
-              title="Translate"
-              type="button"
-            />
+                onClick={async () => {
+                  const nonTranslated = forestFilter(
+                    filtered,
+                    (node) =>
+                      !("translations" in node) ||
+                      !node.translations[language]?.value,
+                  );
+                  const rows = forestFlatten(nonTranslated).filter(
+                    (row) =>
+                      "translations" in row &&
+                      typeof row.translations[defaultLanguage]?.value ===
+                        "string",
+                  );
+                  for (const chunk of chunkBy(rows, 100)) {
+                    const translations = await deepLTranslate(
+                      chunk.map(
+                        (row) =>
+                          row.translations?.[defaultLanguage]?.value as string,
+                      ),
+                      language,
+                    );
+                    await updateI18nValues(
+                      chunk.map((row, i) => ({
+                        key: row.k,
+                        language,
+                        value: translations[i] ?? "",
+                      })),
+                    ).then(setLocales);
+                  }
+                }}
+                size="xs"
+                title="Translate"
+                type="button"
+              />
+            )}
           </div>
         ))}
         {filtered.map((tree) => (

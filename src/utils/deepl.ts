@@ -1,38 +1,15 @@
 "use server";
 
-import { array, create, object, string, union } from "superstruct";
-
-const deepLLanguages: Record<string, string> = {
-  "be-BY": "RU",
-  "cs-CZ": "CS",
-  "da-DK": "DA",
-  "de-DE": "DE",
-  "en-US": "EN-US",
-  en: "EN-US",
-  "es-ES": "ES",
-  "eu-ES": "ES",
-  "fr-FR": "FR",
-  "hu-HU": "HU",
-  "it-IT": "IT",
-  "ja-JP": "JA",
-  "lt-LT": "LT",
-  "nl-NL": "NL",
-  nl: "NL",
-  "nn-NO": "NB",
-  "pt-BR": "PT",
-  "ro-RO": "RO",
-  "ru-RU": "RU",
-  "sk-SK": "SK",
-  "uk-UA": "UK",
-};
+import { array, create, string, type, union } from "superstruct";
+import { deepLLanguages } from "utils/deepl-languages";
 
 const schema = union([
-  object({
+  type({
     translations: array(
-      object({ detected_source_language: string(), text: string() }),
+      type({ detected_source_language: string(), text: string() }),
     ),
   }),
-  object({ message: string() }),
+  type({ message: string() }),
 ]);
 
 export const deepLTranslate = async (text: Array<string>, to: string) => {
