@@ -66,19 +66,19 @@ function Row({
             </div>
           </div>
           <CopyButton
-            className="opacity-0 group-hover/row:opacity-100"
+            className="opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
             size="xs"
             text={row.kFormatted}
           />
           <Button
-            className="text-error opacity-0 group-hover/row:opacity-100"
+            className="text-error opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
             iconLeft={<IconBin />}
             onClick={() => deleteI18nKey(row.k).then(setLocales)}
             size="xs"
             type="button"
           />
           <Button
-            className="opacity-0 group-hover/row:opacity-100"
+            className="opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
             iconLeft={
               <IconPen className="text-weak group-hover/button:text-text" />
             }
