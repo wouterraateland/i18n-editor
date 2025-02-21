@@ -209,7 +209,7 @@ const traverseLocales = (
           ? (defaultTranslation.value.match(/<[^>]+>/g)?.slice() ?? [])
           : [],
       );
-      for (const translation of Object.values(translations))
+      for (const [language, translation] of Object.entries(translations))
         if (!translation.value) continue;
         else {
           const variables = new Set(
@@ -230,6 +230,11 @@ const traverseLocales = (
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
           if (components.symmetricDifference(defaultComponents).size > 0)
             translation.warning = "Component mismatch";
+          if (
+            language !== defaultLanguage &&
+            translation.value === defaultTranslation?.value
+          )
+            translation.warning = "Identical";
         }
 
       forest.push({
@@ -345,11 +350,18 @@ export default function Editor({
               )
             : status === "mismatch"
               ? visibleLanguages.some(
-                  (language) => node.translations?.[language]?.warning,
+                  (language) =>
+                    node.translations?.[language]?.warning &&
+                    node.translations[language]?.warning !== "Identical",
                 )
               : status === "unused"
                 ? !node.usage
-                : true)),
+                : status === "identical"
+                  ? visibleLanguages.some(
+                      (language) =>
+                        node.translations?.[language]?.warning === "Identical",
+                    )
+                  : true)),
   );
   const totalCount = forestCount(forest);
   const filteredCount = forestCount(filtered);
@@ -369,6 +381,7 @@ export default function Editor({
             { label: "Untranslated", value: "untranslated" },
             { label: "Mismatch", value: "mismatch" },
             { label: "Unused", value: "unused" },
+            { label: "Identical", value: "identical" },
           ]}
           size="sm"
           value={status}
