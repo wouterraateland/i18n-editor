@@ -22,8 +22,8 @@ import TableControllerSearchControl from "components/ui/table-controller/search-
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { chunkBy } from "utils/arrays";
-import { deepLTranslate } from "utils/deepl";
-import { deepLLanguages } from "utils/deepl-languages";
+import { translationMappings } from "utils/translation-mappings";
+import { translateStrings } from "utils/translations";
 import type { Forest, Tree } from "utils/trees";
 import { forestCount, forestFilter, forestFlatten } from "utils/trees";
 import { applySearchParams } from "utils/urls";
@@ -107,7 +107,7 @@ function Row({
                 "min-w-64 resize-none px-2.5 py-1 ring [field-sizing:content] hover:bg-divider",
                 !translation?.value
                   ? "theme-error-container"
-                  : translation.warning
+                  : translation.warnings.length > 0
                     ? "theme-warning-container"
                     : "theme-background",
               )}
@@ -190,11 +190,11 @@ const traverseLocales = (
       });
     else {
       const translations = slices.reduce<
-        Record<string, { value: unknown; warning: string | null }>
+        Record<string, { value: unknown; warnings: Array<string> }>
       >(
         (acc, { data, language }) => ({
           ...acc,
-          [language]: { value: data?.[key] ?? "", warning: null },
+          [language]: { value: data?.[key] ?? "", warnings: [] },
         }),
         {},
       );
@@ -225,16 +225,25 @@ const traverseLocales = (
           // @ts-expect-error Symmetric difference is not defined
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
           if (variables.symmetricDifference(defaultVariables).size > 0)
-            translation.warning = "Variable mismatch";
+            translation.warnings.push("Variable mismatch");
           // @ts-expect-error Symmetric difference is not defined
           // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
           if (components.symmetricDifference(defaultComponents).size > 0)
-            translation.warning = "Component mismatch";
+            translation.warnings.push("Component mismatch");
           if (
             language !== defaultLanguage &&
             translation.value === defaultTranslation?.value
           )
-            translation.warning = "Identical";
+            translation.warnings.push("Identical");
+          if (
+            language !== defaultLanguage &&
+            typeof defaultTranslation?.value === "string" &&
+            typeof translation.value === "string" &&
+            translation.value &&
+            translation.value.split("\n").length !==
+              defaultTranslation.value.split("\n").length
+          )
+            translation.warnings.push("Line mismatch");
         }
 
       forest.push({
@@ -279,11 +288,11 @@ export default function Editor({
     const forest = traverseLocales(locales, "", usage);
 
     const emptyValue = languages.reduce<
-      Record<string, { value: string; warning: null }>
+      Record<string, { value: string; warnings: Array<string> }>
     >(
       (acc, language) => ({
         ...acc,
-        [language]: { value: "", warning: null },
+        [language]: { value: "", warnings: [] },
       }),
       {},
     );
@@ -350,18 +359,35 @@ export default function Editor({
               )
             : status === "mismatch"
               ? visibleLanguages.some(
-                  (language) =>
-                    node.translations?.[language]?.warning &&
-                    node.translations[language]?.warning !== "Identical",
+                  (language) => node.translations?.[language]?.warnings.length,
                 )
               : status === "unused"
                 ? !node.usage
                 : status === "identical"
-                  ? visibleLanguages.some(
-                      (language) =>
-                        node.translations?.[language]?.warning === "Identical",
+                  ? visibleLanguages.some((language) =>
+                      node.translations?.[language]?.warnings.includes(
+                        "Identical",
+                      ),
                     )
-                  : true)),
+                  : status === "line-mismatch"
+                    ? visibleLanguages.some((language) =>
+                        node.translations?.[language]?.warnings.includes(
+                          "Line mismatch",
+                        ),
+                      )
+                    : status === "variable-mismatch"
+                      ? visibleLanguages.some((language) =>
+                          node.translations?.[language]?.warnings.includes(
+                            "Variable mismatch",
+                          ),
+                        )
+                      : status === "component-mismatch"
+                        ? visibleLanguages.some((language) =>
+                            node.translations?.[language]?.warnings.includes(
+                              "Component mismatch",
+                            ),
+                          )
+                        : true)),
   );
   const totalCount = forestCount(forest);
   const filteredCount = forestCount(filtered);
@@ -377,10 +403,13 @@ export default function Editor({
           }}
           options={[
             { label: "All", value: "all" },
+            { label: "Unused", value: "unused" },
             { label: "Translated", value: "translated" },
             { label: "Untranslated", value: "untranslated" },
-            { label: "Mismatch", value: "mismatch" },
-            { label: "Unused", value: "unused" },
+            { label: "Any mismatch", value: "mismatch" },
+            { label: "Component mismatch", value: "component-mismatch" },
+            { label: "Variable mismatch", value: "variable-mismatch" },
+            { label: "Line mismatch", value: "line-mismatch" },
             { label: "Identical", value: "identical" },
           ]}
           size="sm"
@@ -433,7 +462,9 @@ export default function Editor({
             style={{ gridColumnStart: language }}
           >
             <p className="pl-1.5">{sentenceCase(language)}</p>
-            {language !== defaultLanguage && deepLLanguages[language] && (
+            {translationMappings.some(
+              (map) => map.from === defaultLanguage && map.to === language,
+            ) && (
               <Button
                 iconLeft={
                   <IconSparkle className="text-weak group-hover/button:text-text" />
@@ -452,11 +483,12 @@ export default function Editor({
                         "string",
                   );
                   for (const chunk of chunkBy(rows, 100)) {
-                    const translations = await deepLTranslate(
+                    const translations = await translateStrings(
                       chunk.map(
                         (row) =>
                           row.translations?.[defaultLanguage]?.value as string,
                       ),
+                      defaultLanguage,
                       language,
                     );
                     await updateI18nValues(
