@@ -66,19 +66,19 @@ function Row({
             </div>
           </div>
           <CopyButton
-            className="opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
+            className="flex-shrink-0 opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
             size="xs"
             text={row.kFormatted}
           />
           <Button
-            className="text-error opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
+            className="flex-shrink-0 text-error opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
             iconLeft={<IconBin />}
             onClick={() => deleteI18nKey(row.k).then(setLocales)}
             size="xs"
             type="button"
           />
           <Button
-            className="opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
+            className="flex-shrink-0 opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
             iconLeft={
               <IconPen className="text-weak group-hover/button:text-text" />
             }
@@ -436,9 +436,9 @@ export default function Editor({
       <div
         className="grid min-h-0 min-w-0 gap-px overflow-auto border-b"
         style={{
-          gridTemplateColumns: ["key", ...visibleLanguages]
+          gridTemplateColumns: `[key] max-content ${visibleLanguages
             .map((column) => `[${column}] minmax(min-content, 1fr)`)
-            .join(" "),
+            .join(" ")}`,
         }}
       >
         <div
