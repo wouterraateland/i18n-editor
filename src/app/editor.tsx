@@ -92,6 +92,38 @@ function Row({
             size="xs"
             type="button"
           />
+          <Button
+            className="flex-shrink-0 text-error opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
+            iconLeft={
+              <IconSparkle className="text-weak group-hover/button:text-text" />
+            }
+            onClick={async () => {
+              const translations = Array<{
+                key: string;
+                language: string;
+                value: string;
+              }>();
+              for (const language of languages) {
+                if (language === defaultLanguage) continue;
+                if (row.translations?.[language]?.value) continue;
+
+                translations.push({
+                  key: row.k,
+                  language,
+                  value: await translateStrings(
+                    [row.translations?.[defaultLanguage]?.value as string],
+                    defaultLanguage,
+                    language,
+                  ).then((translations) => translations[0] ?? ""),
+                });
+              }
+              if (translations.length === 0) return;
+              await updateI18nValues(translations).then(setLocales);
+            }}
+            size="xs"
+            title="Translate"
+            type="button"
+          />
         </div>
         {languages.map((language) => {
           const translation = row.translations?.[language];
