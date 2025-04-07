@@ -12,6 +12,12 @@ export const translationMappings: Array<{
   },
   {
     from: "en-US",
+    to: "bg-BG",
+    provider: "DeepL",
+    params: { source_lang: "EN", target_lang: "BG" },
+  },
+  {
+    from: "en-US",
     to: "cs-CZ",
     provider: "DeepL",
     params: { source_lang: "EN", target_lang: "CS" },
@@ -45,6 +51,12 @@ export const translationMappings: Array<{
     to: "fr-FR",
     provider: "DeepL",
     params: { source_lang: "EN", target_lang: "FR" },
+  },
+  {
+    from: "en-US",
+    to: "gr-EL",
+    provider: "DeepL",
+    params: { source_lang: "EN", target_lang: "EL" },
   },
   {
     from: "en-US",
