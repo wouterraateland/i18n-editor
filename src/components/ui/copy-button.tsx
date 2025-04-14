@@ -17,7 +17,7 @@ export default function CopyButton({
   size?: ButtonSize;
   text: string;
 } & React.ComponentPropsWithoutRef<"button">) {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const timeoutRef = useRef(setTimeout(() => {}));
 
   const [copied, setCopied] = useState(false);
 
@@ -36,13 +36,13 @@ export default function CopyButton({
         <div className="grid">
           <IconCheck
             className={clsx(
-              "col-start-1 row-start-1 text-primary transition-opacity",
+              "text-primary col-start-1 row-start-1 transition-opacity",
               copied || "opacity-0",
             )}
           />
           <IconCopy
             className={clsx(
-              "col-start-1 row-start-1 text-weak transition-opacity group-hover/button:text-text",
+              "text-weak group-hover/button:text-text col-start-1 row-start-1 transition-opacity",
               copied && "opacity-0",
             )}
           />
@@ -52,6 +52,7 @@ export default function CopyButton({
       onClick={async () => {
         await copyTextToClipboard(text);
         setCopied(true);
+        clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(() => {
           setCopied(false);
         }, 2000);

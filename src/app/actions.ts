@@ -1,7 +1,7 @@
 "use server";
 
+import type { Locale, Usage } from "app/utils";
 import { readdir, readFile, stat, writeFile } from "fs/promises";
-import { headers } from "next/headers";
 import path from "path";
 
 const sortObject = <T>(obj: T): T => {
@@ -33,8 +33,6 @@ const removeEmpty = <T>(obj: T): T => {
 };
 
 export const loadLocales = async () => {
-  headers();
-
   const files = await readdir(process.env.LOCALE_DIR ?? "");
   const localeFiles = files.filter((file) => file.endsWith(".json"));
 
@@ -49,15 +47,13 @@ export const loadLocales = async () => {
 };
 
 export const getI18nUsage = async () => {
-  headers();
-
   const locales = await loadLocales();
   const defaultLocale = locales.find(
     ({ language }) => language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE,
   );
   if (!defaultLocale) return {};
 
-  const usage: Record<string, number> = {};
+  const usage: Usage = {};
   const tRegex =
     /\Wt\("[a-z0-9-_:.]+"|\WtLocalized\("[a-z0-9-_:.]+"|i18nKey="[a-z0-9-_:.]+"/g;
 
@@ -92,9 +88,7 @@ export const getI18nUsage = async () => {
   return usage;
 };
 
-const saveLocales = async (
-  locales: { language: string; data: Record<string, unknown> }[],
-) => {
+const saveLocales = async (locales: Array<Locale>) => {
   const dirname = process.env.LOCALE_DIR ?? "";
   await Promise.all(
     locales.map(({ language, data }) =>
@@ -140,8 +134,6 @@ const findReplace = async (
 };
 
 export const organizeLocales = async () => {
-  headers();
-
   const locales = await loadLocales();
   const defaultLocale = locales.find(
     ({ language }) => language === process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE,
@@ -183,12 +175,8 @@ export const organizeLocales = async () => {
   return locales;
 };
 
-export const deleteI18nKey = async (key: string) => {
-  headers();
-
+export const deleteI18nKey = async (parts: Array<string>) => {
   const locales = await loadLocales();
-
-  const parts = key.split(".");
   const lastPart = parts.pop();
 
   if (lastPart)
@@ -210,21 +198,20 @@ export const deleteI18nKey = async (key: string) => {
   return locales;
 };
 
-export const updateI18nKey = async (prev: string, next: string) => {
-  headers();
-
+export const updateI18nKey = async (
+  prev: Array<string>,
+  next: Array<string>,
+) => {
   const locales = await loadLocales();
 
-  const prevParts = prev.split(".");
-  const lastPrevPart = prevParts.pop();
-  const nextParts = next.split(".");
-  const lastNextPart = nextParts.pop();
+  const lastPrevPart = prev.pop();
+  const lastNextPart = next.pop();
 
   if (!lastPrevPart || !lastNextPart) return locales;
 
   for (const { data } of locales) {
     let current: Record<string, unknown> | undefined = data;
-    for (const part of prevParts)
+    for (const part of prev)
       current = current?.[part] as Record<string, unknown> | undefined;
 
     const prevValue = current?.[lastPrevPart];
@@ -236,7 +223,7 @@ export const updateI18nKey = async (prev: string, next: string) => {
     if (!prevValue) continue;
 
     current = data;
-    for (const part of nextParts) {
+    for (const part of next) {
       if (!current[part]) current[part] = {};
       current = current[part] as Record<string, unknown>;
     }
@@ -250,33 +237,26 @@ export const updateI18nKey = async (prev: string, next: string) => {
 
   await findReplace(
     process.env.SRC_DIR ?? "",
-    `"${prev.replace(".", ":").replace("translation:", "")}"`,
-    `"${next.replace(".", ":").replace("translation:", "")}"`,
+    `"${prev.join(".").replace(".", ":").replace("translation:", "")}"`,
+    `"${next.join(".").replace(".", ":").replace("translation:", "")}"`,
   );
 
   return locales;
 };
 
 export const updateI18nValues = async (
-  entries: Array<{
-    key: string;
-    language: string;
-    value: string;
-  }>,
+  entries: Array<{ key: Array<string>; language: string; value: string }>,
 ) => {
-  headers();
-
   const locales = await loadLocales();
 
   for (const { key, language, value } of entries) {
-    const prevParts = key.split(".");
-    const lastPrevPart = prevParts.pop();
+    const lastPrevPart = key.pop();
     if (!lastPrevPart) continue;
 
     for (const locale of locales) {
       if (locale.language !== language) continue;
       let current: Record<string, unknown> = locale.data;
-      for (const part of prevParts) {
+      for (const part of key) {
         if (!current[part]) current[part] = {};
         current = current[part] as Record<string, unknown>;
       }

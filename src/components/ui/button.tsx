@@ -73,6 +73,7 @@ const Button = forwardRef<
     <button
       {...props}
       ref={ref}
+      aria-label={renderTitle}
       className={clsx(
         "group/button inline-flex min-w-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-lg outline-offset-1 transition-colors hover:bg-divider disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-divider data-[state=open]:outline",
         !label && fallbackLabel && "text-weak hover:text-text",
@@ -85,7 +86,6 @@ const Button = forwardRef<
       )}
       disabled={disabled || renderPending}
       onClick={withPending(onClick)}
-      title={renderTitle}
     >
       {renderIconLeft ? (
         <div

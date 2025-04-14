@@ -1,6 +1,6 @@
 export type Tree = {
   children?: Array<Tree>;
-  k: string;
+  k: Array<string>;
   kFormatted: string;
   translations?: Record<string, { value: unknown; warnings: Array<string> }>;
   usage?: number;

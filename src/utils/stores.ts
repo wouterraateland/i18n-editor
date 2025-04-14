@@ -2,7 +2,7 @@ import { storageAvailable } from "utils/local-storage";
 
 type Subscription<T> = (state: T) => void;
 
-const createStore = <T>(initialData: T) => {
+export const createStore = <T>(initialData: T) => {
   let data = initialData;
   const subscriptions = new Set<Subscription<T>>();
 

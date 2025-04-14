@@ -27,7 +27,7 @@ export default function AutoSavingInput<T>({
     value: T;
     onChange(value: T): void;
     onBlur(): void;
-  }): JSX.Element;
+  }): React.ReactNode;
   saveDelay?: number;
   savedIndicatorDuration?: number;
 }) {
@@ -38,7 +38,7 @@ export default function AutoSavingInput<T>({
   outerValueRef.current = value;
   const saveDelayRef = useRef(saveDelay);
   saveDelayRef.current = saveDelay;
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const saveTimeoutRef = useRef(setTimeout(() => {}));
   const savedIndicatorDurationRef = useRef(savedIndicatorDuration);
   savedIndicatorDurationRef.current = savedIndicatorDuration;
   const hashRef = useRef(hash);
@@ -97,7 +97,7 @@ export default function AutoSavingInput<T>({
       {(indicatorPosition === "left" || indicatorPosition === "right") && (
         <div
           className={clsx(
-            "col-start-1 row-start-1 m-1 size-2 rounded-full bg-weak transition-opacity",
+            "bg-weak col-start-1 row-start-1 m-1 size-2 rounded-full transition-opacity",
             (hash(value) === hash(innerValueRef.current) ||
               state === "saving") &&
               "opacity-0",
@@ -106,7 +106,7 @@ export default function AutoSavingInput<T>({
       )}
       <div
         className={clsx(
-          "col-start-1 row-start-1 flex items-center gap-1 justify-self-end text-sm text-weak transition-opacity",
+          "text-weak col-start-1 row-start-1 flex items-center gap-1 justify-self-end text-sm transition-opacity",
           hash(value) === hash(innerValueRef.current) && "opacity-0",
         )}
       >
@@ -124,7 +124,7 @@ export default function AutoSavingInput<T>({
       </div>
       <div
         className={clsx(
-          "col-start-1 row-start-1 flex items-center gap-1 justify-self-end text-sm text-primary transition-opacity",
+          "text-primary col-start-1 row-start-1 flex items-center gap-1 justify-self-end text-sm transition-opacity",
           (hash(value) !== hash(innerValueRef.current) || state === "idle") &&
             "opacity-0",
         )}
@@ -167,7 +167,7 @@ export default function AutoSavingInput<T>({
               <div className="ml-auto grid">{indicator}</div>
             )}
           </div>
-          {description && <p className="text-sm text-weak">{description}</p>}
+          {description && <p className="text-weak text-sm">{description}</p>}
         </div>
       )}
       {indicatorPosition === "left" || indicatorPosition === "right" ? (

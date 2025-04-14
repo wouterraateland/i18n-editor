@@ -1,7 +1,6 @@
 "use client";
 
 import { arrayMove } from "@dnd-kit/sortable";
-import { sentenceCase } from "change-case";
 import IconCheck from "components/icons/check";
 import IconColumns from "components/icons/columns";
 import Button from "components/ui/button";
@@ -20,7 +19,7 @@ export default function TableControllerLanguageControl({
   options,
 }: {
   defaultLanguages: Array<string>;
-  options: Array<{ id: string; label: string }> | Array<string>;
+  options: Array<{ id: string; label: string }>;
 }) {
   const searchParams = useSearchParams();
 
@@ -45,11 +44,7 @@ export default function TableControllerLanguageControl({
         <SortableList
           className="divide-y-0 border-y-0 px-2 py-1 sm:pl-8"
           items={options
-            .map((option) =>
-              typeof option === "string"
-                ? { id: option, label: sentenceCase(option) }
-                : option,
-            )
+            .slice()
             .sort(
               firstBy((o) =>
                 !languages.includes(o.id)
@@ -101,6 +96,31 @@ export default function TableControllerLanguageControl({
             />
           )}
         />
+        <div className="sticky bottom-0 flex gap-1 border-t p-1 theme-surface">
+          <Button
+            className="flex-grow"
+            label="None"
+            onClick={() => {
+              applySearchParams({ languages: [] }, window.location.search);
+            }}
+            outline
+            size="sm"
+            type="button"
+          />
+          <Button
+            className="flex-grow"
+            label="All"
+            onClick={() => {
+              applySearchParams(
+                { languages: options.map((option) => option.id) },
+                window.location.search,
+              );
+            }}
+            outline
+            size="sm"
+            type="button"
+          />
+        </div>
       </PopoverContent>
     </PopoverRoot>
   );
