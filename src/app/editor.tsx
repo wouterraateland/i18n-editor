@@ -51,7 +51,7 @@ export default function Editor() {
         languages={languages}
       />
       <div
-        className="grid min-h-0 min-w-0 gap-px overflow-auto border-b"
+        className="border-divider grid min-h-0 min-w-0 gap-px overflow-auto border-b"
         style={{
           gridTemplateColumns: `[key] max-content ${visibleLanguages
             .map((column) => `[${column}] minmax(min-content, 1fr)`)

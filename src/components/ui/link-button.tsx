@@ -62,9 +62,9 @@ const LinkButton = forwardRef<
     <Link
       ref={ref}
       className={clsx(
-        "group/button inline-flex min-w-0 cursor-pointer items-center justify-center rounded-lg outline-offset-1 transition-colors hover:bg-divider",
+        "group/button hover:bg-divider inline-flex min-w-0 cursor-pointer items-center justify-center rounded-lg outline-offset-1 transition-colors",
         disabled && "pointer-events-none opacity-50",
-        outline && "ring ring-inset hover:ring-current",
+        outline && "ring-divider ring ring-inset hover:ring-current",
         !label && fallbackLabel && "text-weak hover:text-text",
         size === "sm" && "gap-x-1 p-1",
         size === "md" && "gap-x-2 p-2",
@@ -97,7 +97,7 @@ const LinkButton = forwardRef<
           className={clsx(
             layout === "text" || !iconLeft
               ? "m-1 inline-flex empty:hidden"
-              : "absolute -translate-y-3 translate-x-3 scale-50",
+              : "absolute translate-x-3 -translate-y-3 scale-50",
             iconRightClassName,
           )}
         >

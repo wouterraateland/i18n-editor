@@ -24,9 +24,6 @@ export default function CopyButton({
   useEffect(() => {
     clearTimeout(timeoutRef.current);
     setCopied(false);
-    return () => {
-      clearTimeout(timeoutRef.current);
-    };
   }, [text]);
 
   return (
@@ -36,7 +33,7 @@ export default function CopyButton({
         <div className="grid">
           <IconCheck
             className={clsx(
-              "text-primary col-start-1 row-start-1 transition-opacity",
+              "text-text col-start-1 row-start-1 transition-opacity",
               copied || "opacity-0",
             )}
           />

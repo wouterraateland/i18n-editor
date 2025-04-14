@@ -75,9 +75,9 @@ const Button = forwardRef<
       ref={ref}
       aria-label={renderTitle}
       className={clsx(
-        "group/button inline-flex min-w-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-lg outline-offset-1 transition-colors hover:bg-divider disabled:pointer-events-none disabled:opacity-50 data-[state=open]:bg-divider data-[state=open]:outline",
+        "group/button hover:bg-divider data-[state=open]:bg-divider inline-flex min-w-0 cursor-pointer items-center justify-center rounded-lg whitespace-nowrap outline-offset-1 transition-colors disabled:pointer-events-none disabled:opacity-50 data-[state=open]:outline",
         !label && fallbackLabel && "text-weak hover:text-text",
-        outline && "ring ring-inset hover:ring-current",
+        outline && "ring-divider ring ring-inset hover:ring-current",
         size === "sm" && "gap-x-1 p-1",
         size === "md" && "gap-x-2 p-2",
         size === "lg" && "gap-x-3 p-3",
@@ -113,7 +113,7 @@ const Button = forwardRef<
             "pointer-events-none empty:hidden",
             layout === "text" || !iconLeft
               ? "m-1 inline-flex"
-              : "absolute -translate-y-3 translate-x-3 scale-50",
+              : "absolute translate-x-3 -translate-y-3 scale-50",
             iconRightClassName,
           )}
         >

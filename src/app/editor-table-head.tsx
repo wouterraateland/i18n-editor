@@ -22,12 +22,14 @@ export default function EditorTableHead({
   return (
     <>
       <div
-        className="bg-surface sticky top-0 left-0 z-40 flex gap-1 p-1 ring"
+        className="bg-surface ring-divider sticky top-0 left-0 z-40 flex gap-1 p-1 ring"
         style={{ gridColumnStart: "key" }}
       >
         <p className="pl-1.5">Key</p>
         <Button
-          iconLeft={<IconRandom />}
+          iconLeft={
+            <IconRandom className="text-weak group-hover/button:text-text" />
+          }
           layout="icon"
           onClick={async () => {
             queryCacheSet("usage", await getI18nUsage());
@@ -40,7 +42,7 @@ export default function EditorTableHead({
       {visibleLanguages.map((language) => (
         <div
           key={language}
-          className="bg-surface sticky top-0 z-30 flex items-center gap-1 p-1 ring"
+          className="bg-surface ring-divider sticky top-0 z-30 flex items-center gap-1 p-1 ring"
           style={{ gridColumnStart: language }}
         >
           <p className="pl-1.5">{sentenceCase(language)}</p>

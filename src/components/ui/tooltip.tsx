@@ -12,7 +12,7 @@ export function TooltipContent({
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Content
         className={clsx(
-          "pointer-events-none z-[300] max-w-[calc(100vw-1rem)] gap-x-2 rounded-md px-3 py-1 text-left theme-inverse-surface data-[state=closed]:animate-fade-out-still data-[state=delayed-open]:animate-fade-in data-[state=instant-open]:animate-fade-in-still",
+          "theme-surface data-[state=closed]:animate-fade-out-still data-[state=delayed-open]:animate-fade-in data-[state=instant-open]:animate-fade-in-still ring-divider pointer-events-none z-300 max-w-[calc(100vw-1rem)] gap-x-1 rounded-md px-2.5 py-1 text-left ring ring-inset",
           className,
         )}
         {...props}

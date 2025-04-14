@@ -1,8 +1,13 @@
+import type { TranslationWarning } from "app/utils";
+
 export type Tree = {
   children?: Array<Tree>;
   k: Array<string>;
   kFormatted: string;
-  translations?: Record<string, { value: unknown; warnings: Array<string> }>;
+  translations?: Record<
+    string,
+    { value: unknown; warnings: Array<TranslationWarning> }
+  >;
   usage?: number;
 };
 

@@ -25,10 +25,10 @@ export default function EditorRow({
     return (
       <>
         <div
-          className="group/row theme-surface sticky left-0 z-10 flex items-start gap-1 p-1 ring"
+          className="group/row theme-surface ring-divider sticky left-0 z-10 flex items-start gap-1 p-1 ring"
           style={{ gridColumnStart: "key" }}
         >
-          <div className="flex flex-grow items-center gap-1">
+          <div className="flex grow items-center gap-1">
             <pre className="px-1.5">{row.k[row.k.length - 1]}</pre>
             <div
               className={clsx(
@@ -40,12 +40,12 @@ export default function EditorRow({
             </div>
           </div>
           <CopyButton
-            className="flex-shrink-0 opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
+            className="shrink-0 opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
             size="xs"
             text={row.kFormatted}
           />
           <Button
-            className="text-error flex-shrink-0 opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
+            className="text-error shrink-0 opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
             iconLeft={<IconBin />}
             onClick={async () => {
               queryCacheSet("locales", await deleteI18nKey(row.k));
@@ -54,7 +54,7 @@ export default function EditorRow({
             type="button"
           />
           <Button
-            className="flex-shrink-0 opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
+            className="shrink-0 opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
             iconLeft={
               <IconPen className="text-weak group-hover/button:text-text" />
             }
@@ -69,7 +69,7 @@ export default function EditorRow({
             type="button"
           />
           <Button
-            className="text-error flex-shrink-0 opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
+            className="text-error shrink-0 opacity-0 group-focus-within/row:opacity-100 group-hover/row:opacity-100"
             iconLeft={
               <IconSparkle className="text-weak group-hover/button:text-text" />
             }
@@ -112,7 +112,7 @@ export default function EditorRow({
             <textarea
               key={language}
               className={clsx(
-                "hover:bg-divider [field-sizing:content] min-w-64 resize-none px-2.5 py-1 ring",
+                "hover:bg-divider ring-divider [field-sizing:content] min-w-64 resize-none px-2.5 py-1 ring",
                 !translation?.value
                   ? "theme-error-container"
                   : translation.warnings.length > 0
@@ -139,7 +139,7 @@ export default function EditorRow({
   return (
     <div className="col-span-full grid grid-cols-subgrid gap-px">
       <div
-        className="theme-background sticky col-span-full flex ring"
+        className="theme-background ring-divider sticky col-span-full flex ring"
         style={{
           top: `${row.k.length * 2}rem`,
           paddingLeft: `${Math.max(0, row.k.length - 2)}rem`,
@@ -148,7 +148,7 @@ export default function EditorRow({
       >
         <pre className="text-weak sticky left-0 px-2.5 py-1">
           {row.k.length > 1 && "└ "}
-          {row.k.pop()}
+          {row.k[row.k.length - 1]}
         </pre>
       </div>
       {"children" in row &&

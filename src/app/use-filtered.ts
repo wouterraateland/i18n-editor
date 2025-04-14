@@ -1,3 +1,4 @@
+import { TranslationWarning } from "app/utils";
 import type { Forest } from "utils/trees";
 import { forestFilter } from "utils/trees";
 
@@ -29,19 +30,27 @@ export default function useFiltered(
         return !node.usage;
       case "identical":
         return visibleLanguages.some((language) =>
-          translations[language]?.warnings.includes("Identical"),
+          translations[language]?.warnings.includes(
+            TranslationWarning.Identical,
+          ),
         );
       case "line-mismatch":
         return visibleLanguages.some((language) =>
-          translations[language]?.warnings.includes("Line mismatch"),
+          translations[language]?.warnings.includes(
+            TranslationWarning.LineMismatch,
+          ),
         );
       case "variable-mismatch":
         return visibleLanguages.some((language) =>
-          translations[language]?.warnings.includes("Variable mismatch"),
+          translations[language]?.warnings.includes(
+            TranslationWarning.VariableMismatch,
+          ),
         );
       case "component-mismatch":
         return visibleLanguages.some((language) =>
-          translations[language]?.warnings.includes("Component mismatch"),
+          translations[language]?.warnings.includes(
+            TranslationWarning.ComponentMismatch,
+          ),
         );
     }
     return true;

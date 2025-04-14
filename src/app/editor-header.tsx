@@ -1,11 +1,10 @@
 "use client";
 
+import LanguageControl from "app/language-control";
 import OrganizeButton from "app/organize-button";
+import SearchControl from "app/search-control";
 import { sentenceCase } from "change-case";
 import Select from "components/ui/select";
-import TableControllerLanguageControl from "components/ui/table-controller/language-control";
-import TableControllerRoot from "components/ui/table-controller/root";
-import TableControllerSearchControl from "components/ui/table-controller/search-control";
 import { useSearchParams } from "next/navigation";
 import type { Forest } from "utils/trees";
 import { forestCount } from "utils/trees";
@@ -28,10 +27,9 @@ export default function EditorHeader({
   const filteredCount = forestCount(filtered);
 
   return (
-    <TableControllerRoot>
-      <TableControllerSearchControl placeholder="Search keys" />
+    <div className="border-divider theme-surface relative z-10 flex gap-1 border-b p-1 print:hidden">
+      <SearchControl />
       <Select
-        className="bg-background"
         onChange={(status) => {
           applySearchParams({ status }, window.location.search);
         }}
@@ -46,10 +44,9 @@ export default function EditorHeader({
           { label: "Line mismatch", value: "line-mismatch" },
           { label: "Identical", value: "identical" },
         ]}
-        size="sm"
         value={status}
       />
-      <TableControllerLanguageControl
+      <LanguageControl
         defaultLanguages={[defaultLanguage]}
         options={languages.map((id) => ({ id, label: sentenceCase(id) }))}
       />
@@ -60,6 +57,6 @@ export default function EditorHeader({
         keys
       </p>
       <OrganizeButton />
-    </TableControllerRoot>
+    </div>
   );
 }

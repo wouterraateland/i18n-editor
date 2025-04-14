@@ -107,7 +107,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     <div
       ref={containerRef}
       className={clsx(
-        "relative flex min-w-0 max-w-full rounded-lg theme-background after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:-outline-offset-1 after:outline-[#3b82f6] after:ring after:ring-inset after:transition-shadow after:content-[''] focus-within:after:outline hover:after:ring-current",
+        "theme-background after:ring-divider relative flex max-w-full min-w-0 rounded-lg after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:ring after:-outline-offset-1 after:outline-[#3b82f6] after:transition-shadow after:content-[''] after:ring-inset focus-within:after:outline hover:after:ring-current",
         props.disabled && "pointer-events-none",
         className,
       )}
@@ -116,7 +116,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         <div
           ref={beforeRef}
           className={clsx(
-            "pointer-events-none relative z-10 mr-auto flex flex-shrink-0 items-center",
+            "pointer-events-none relative z-10 mr-auto flex shrink-0 items-center",
             typeof before === "string" && buttonSizeClassNames[size],
             typeof before === "string" && "pr-0",
           )}
@@ -124,7 +124,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           {before}
         </div>
       )}
-      <div className="relative grid min-w-0 flex-grow overflow-clip">
+      <div className="relative grid min-w-0 grow overflow-clip">
         <div
           ref={ghostRef}
           className={clsx(
@@ -147,9 +147,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             inputRef.current = node;
           }}
           className={clsx(
-            "absolute inset-0 appearance-none rounded-lg bg-transparent leading-6 placeholder:text-weak focus:outline-none disabled:pointer-events-none disabled:opacity-50",
-            before && "-ml-[--w-before] pl-[--w-before]",
-            (maxLength || after) && "-mr-[--w-after] pr-[--w-after]",
+            "placeholder:text-weak absolute inset-0 appearance-none rounded-lg bg-transparent leading-6 focus:outline-hidden disabled:pointer-events-none disabled:opacity-50",
+            before && "-ml-(--w-before) pl-(--w-before)",
+            (maxLength || after) && "-mr-(--w-after) pr-(--w-after)",
             buttonSizeClassNames[size],
           )}
           {...props}
@@ -159,7 +159,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         <div
           ref={afterRef}
           className={clsx(
-            "pointer-events-none relative z-10 ml-auto flex flex-shrink-0 items-center",
+            "pointer-events-none relative z-10 ml-auto flex shrink-0 items-center",
             typeof after === "string" && buttonSizeClassNames[size],
             typeof after === "string" && "pl-0",
           )}
@@ -170,7 +170,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         <div
           ref={afterRef}
           className={clsx(
-            "pointer-events-none relative ml-auto flex-shrink-0",
+            "pointer-events-none relative ml-auto shrink-0",
             buttonSizeClassNames[size],
           )}
         >

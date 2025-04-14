@@ -3,6 +3,13 @@ import type { Forest, Tree } from "utils/trees";
 export type Locale = { data: Record<string, unknown>; language: string };
 export type Usage = Record<string, number>;
 
+export enum TranslationWarning {
+  ComponentMismatch,
+  Identical,
+  LineMismatch,
+  VariableMismatch,
+}
+
 export const unformatKey = (key: string | null) => {
   if (!key) return null;
   if (!key.includes(":")) return `translation.${key}`.split(".");
@@ -14,7 +21,7 @@ export const traverseLocales = (
     data: Record<string, unknown> | undefined;
     language: string;
   }>,
-  prefix: string,
+  prefix: Array<string>,
   defaultLanguage: string,
   usage: Usage,
 ): Forest => {
@@ -23,8 +30,11 @@ export const traverseLocales = (
   if (!obj) return forest;
 
   for (const key in obj) {
-    const k = `${prefix}${key}`;
-    const kFormatted = k.replace(".", ":").replace("translation:", "");
+    const k = [...prefix, key];
+    const kFormatted = k
+      .join(".")
+      .replace(".", ":")
+      .replace("translation:", "");
 
     if (
       typeof obj[key] === "object" &&
@@ -32,21 +42,21 @@ export const traverseLocales = (
       !Array.isArray(obj[key])
     )
       forest.push({
-        k: k.split("."),
+        k,
         kFormatted,
         children: traverseLocales(
           slices.map(({ data, language }) => ({
             data: data?.[key] as Record<string, unknown> | undefined,
             language,
           })),
-          `${prefix}${key}.`,
+          k,
           defaultLanguage,
           usage,
         ),
       });
     else {
       const translations = slices.reduce<
-        Record<string, { value: unknown; warnings: Array<string> }>
+        Record<string, { value: unknown; warnings: Array<TranslationWarning> }>
       >(
         (acc, { data, language }) => ({
           ...acc,
@@ -79,14 +89,14 @@ export const traverseLocales = (
               : [],
           );
           if (variables.symmetricDifference(defaultVariables).size > 0)
-            translation.warnings.push("Variable mismatch");
+            translation.warnings.push(TranslationWarning.VariableMismatch);
           if (components.symmetricDifference(defaultComponents).size > 0)
-            translation.warnings.push("Component mismatch");
+            translation.warnings.push(TranslationWarning.ComponentMismatch);
           if (
             language !== defaultLanguage &&
             translation.value === defaultTranslation?.value
           )
-            translation.warnings.push("Identical");
+            translation.warnings.push(TranslationWarning.Identical);
           if (
             language !== defaultLanguage &&
             typeof defaultTranslation?.value === "string" &&
@@ -95,11 +105,11 @@ export const traverseLocales = (
             translation.value.split("\n").length !==
               defaultTranslation.value.split("\n").length
           )
-            translation.warnings.push("Line mismatch");
+            translation.warnings.push(TranslationWarning.LineMismatch);
         }
 
       forest.push({
-        k: k.split("."),
+        k,
         kFormatted,
         usage: usage[kFormatted.replace(/_.*/, "")] ?? 0,
         translations,

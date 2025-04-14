@@ -1,4 +1,4 @@
-import type { Locale, Usage } from "app/utils";
+import type { Locale, TranslationWarning, Usage } from "app/utils";
 import { traverseLocales, unformatKey } from "app/utils";
 import { useMemo } from "react";
 
@@ -9,10 +9,10 @@ export default function useForest(
   usage: Usage,
 ) {
   return useMemo(() => {
-    const forest = traverseLocales(locales, "", defaultLanguage, usage);
+    const forest = traverseLocales(locales, [], defaultLanguage, usage);
 
     const emptyValue = languages.reduce<
-      Record<string, { value: string; warnings: Array<string> }>
+      Record<string, { value: string; warnings: Array<TranslationWarning> }>
     >(
       (acc, language) => ({
         ...acc,
